@@ -13,7 +13,7 @@
 - [x] ACTF
 - [x] ETEL
 - [x] ORAS
-- [ ] KORA opportunity analysis
+- [x] KORA opportunity analysis
 - [ ] Final cross-position comparison
 
 ### Phase 2 — Portfolio architecture
@@ -22,10 +22,10 @@ Draft buckets:
 - **Needs structure repair before adding:** TALM, MASR
 - **Speculative / active trading:** ACTF
 - **Tracking / immaterial:** ORAS
-- **Watchlist opportunity:** KORA
+- **Active watchlist / day-swing candidate:** KORA
 - **Cash reserve:** maintain a protected reserve instead of fully redeploying all available cash
 
-Final percentages will be set only after KORA and full risk-budget work.
+Final percentages will be set only after the full risk-budget work.
 
 ### Phase 3 — Risk framework
 To define:
@@ -56,17 +56,17 @@ Before every buy:
 - Re-entry allowed only on a new setup
 
 ### Phase 6 — KORA playbook
-Build before the next live decision:
-- Daily + 5m context
-- Latest momentum leg
-- Key support/resistance
-- Rights/capital-increase implications
-- Early valid trigger
-- Pilot size
-- Add trigger
-- Invalidation
-- Partial targets
-- Live depth/tape checklist
+Current pre-session map:
+- Official reference close: 6.70
+- Immediate decision zone: 6.60–6.70
+- Upside confirmation sequence: 6.70 hold/reclaim → 7.00 → 7.20–7.45 → 7.66–7.87
+- Pullback support sequence: 6.15–6.25 → 5.75–5.90 → 5.60–5.65
+- Avoid blind chasing if it gaps sharply above 6.70.
+- Preferred day-trade trigger: first controlled pullback that holds a meaningful level, followed by reclaim with tape/price confirmation.
+- Preferred swing trigger: hold above 6.70 or constructive pullback into support followed by higher low/reclaim.
+- Pilot first; add only after proof.
+- Before live entry, inspect current depth + trades/tape.
+- Account for the approved rights issue; do not interpret eventual ex-rights price adjustment as an ordinary crash.
 
 ### Phase 7 — Data quality
 Review EGX-Portfolio:
@@ -74,3 +74,4 @@ Review EGX-Portfolio:
 - official close vs intraday last-bar reconciliation
 - use transaction ledger as source of truth for holdings
 - continue 1m history coverage for forensic review
+- KORA Sep 24 intraday history is incomplete after ~12:35 and misses the late rally to the official 6.70 close; backfill/fix required
