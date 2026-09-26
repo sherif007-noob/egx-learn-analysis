@@ -113,11 +113,12 @@ Current pre-session map:
 - Before live entry, inspect current depth + trades/tape.
 - Account for the approved rights issue; do not interpret eventual ex-rights price adjustment as an ordinary crash.
 
-Example sizing only:
-- If trigger ≈ 6.70 and structural invalidation ≈ 6.50, risk/share ≈ 0.20.
-- 1R sizing alone would permit ~1,650 shares, but that exceeds the current active notional cap.
-- A pilot around 600–750 shares would use roughly EGP 4.0k–5.0k notional and risk about EGP 120–150 before slippage.
-- An add is allowed only if price confirms continuation and the total active bucket remains within limits.
+Refined sizing:
+- Start smaller than the full KORA allowance so there is room to add.
+- Initial pilot: **400–500 shares** if the trigger is valid.
+- Add: **200–250 shares** only after continuation is proven.
+- Total KORA notional should stay around **EGP 5.2k maximum** while ACTF remains a 12% active position.
+- Example: entry 6.70 / invalidation 6.50 gives EGP 0.20 risk/share. A 500-share pilot risks about EGP 100 before slippage.
 
 ### Phase 7 — Current-position rules
 
@@ -153,6 +154,89 @@ Example sizing only:
 
 **ORAS**
 - Tracking/learning position only at current size.
+
+## 2026-09-27 — Sunday Execution Sheet
+
+### Portfolio-level rules
+- No more than **one new position** today.
+- KORA is the only planned new-trade candidate unless a completely different setup is reviewed first.
+- Protected cash stays at **15% of equity minimum**.
+- Maximum realized active-trading loss for the day: **2R ≈ EGP 660**.
+- If ACTF is actively breaking down at the open, manage ACTF before initiating KORA.
+- No averaging down in TALM, MASR, or ACTF.
+- Do not use market orders in thin or fast-moving names.
+
+### KORA — new day/swing trade
+
+**Scenario A: opens around 6.55–6.75**
+- Do not buy the first print.
+- Valid early trigger: 6.60 area holds, then price reclaims/holds 6.70 with actual executions following through.
+- Pilot: **400–500 shares**.
+- Structural invalidation: below the opening/local higher-low structure; around 6.50 only if that level is actually the structure.
+- If 7.00 breaks and holds or is retested successfully, add **200–250 shares**.
+- If 7.00 rejects repeatedly and tape loses aggression, take a partial rather than waiting blindly.
+- Main upside zones: 7.20–7.45, then 7.66–7.87.
+
+**Scenario B: gaps above 6.90–7.00**
+- No blind chase.
+- Wait for a pullback into roughly 6.85–7.00 and a reclaim/hold.
+- If it never offers a controlled entry, miss the trade rather than force it.
+
+**Scenario C: weak open below 6.50**
+- No breakout buy.
+- Watch 6.15–6.25 for defense.
+- A possible swing/day pilot requires rejection of the low plus reclaim of the nearby level with tape support.
+- If 6.15 fails, next major watch zone is 5.75–5.90.
+- A sustained break below 5.75 invalidates the current long-continuation idea.
+
+### ACTF — manage existing active position
+- **No add.**
+- If 2.77–2.80 holds and price reclaims 2.85/2.88, hold and watch 2.92.
+- If a rebound stalls hard in 2.92–3.00, use the bounce to reduce **25–50%** rather than treating breakeven as the only acceptable exit.
+- If price trades below 2.77 and cannot reclaim 2.80 after a genuine attempt, reduce at least **50%**.
+- If the 2.68–2.70 base also fails, the old momentum thesis is fully broken and the remaining position should be reassessed for exit.
+- Reclaiming 3.00 improves the picture; 3.10–3.17 would be much more meaningful structure repair.
+
+### TALM — repair position
+- **No add.**
+- 19.70–20.00 holding plus reclaim of 20.80 is constructive.
+- 20.80–21.20 reclaim means continue holding while monitoring.
+- A break below 19.45 with failed reclaim is a de-risk signal; default action is to reduce roughly **50%**.
+- 18.90 is the deeper line in the sand because it is around the pre-breakout area; failure there would challenge the remaining recovery thesis.
+
+### MASR — repair position
+- **No add.**
+- 7.24–7.30 is the primary defense zone.
+- A hold there followed by reclaim of 7.50–7.60 is constructive.
+- 7.68–7.80 is the first meaningful structure-repair zone.
+- A break below 7.24 with failed reclaim is a de-risk signal; default action is to reduce roughly **50%**.
+- If the stock later loses the 7.00 / high-6.80s area as well, the remaining position requires a fresh thesis rather than automatic holding.
+
+### ORHD — core/medium-term candidate
+- **No add at the open.**
+- Holding 39.10–39.70 and reclaiming 41 is constructive.
+- 41.5–42.4 is the key recovery band.
+- A brief tick below 39.10 is not enough to force action in a core candidate.
+- A sustained break below 39.10 plus failed reclaim is a reason to reduce risk; the bonus-share event does not override structure.
+
+### ETEL — core candidate / winner protection
+- **No add.**
+- Above 133–135: maintain the core position.
+- 138–140 remains major resistance.
+- If 140 breaks cleanly and holds, keep the runner.
+- If 140 is rejected again and price subsequently loses 138, take a deliberate partial — default **30 shares** — rather than round-trip the whole gain.
+- A break of 130–131 with failed reclaim is a stronger de-risk signal because it damages the recent higher-low structure.
+
+### ORAS
+- One-share tracking position. No portfolio action planned.
+
+### What to inspect live
+For KORA and ACTF, prioritize:
+1. Current Price Depth
+2. Recent Trades / tape
+3. 1m price response at the mapped levels
+4. Whether visible bids actually absorb executions or disappear
+5. Spread/slippage before placing a limit order
 
 ### Phase 8 — Data quality
 Review EGX-Portfolio:
