@@ -241,7 +241,7 @@ For KORA and ACTF, prioritize:
 ### Phase 8 — Data quality
 Review EGX-Portfolio:
 - stale positions cleanup
-- official close vs intraday last-bar reconciliation
+- validate official close vs intraday last-bar reconciliation generally; ETEL Sep 24 at 135.99 was rechecked and is not an identified mismatch
 - use transaction ledger as source of truth for holdings
 - continue 1m history coverage for forensic review
 - KORA Sep 24 intraday history is incomplete after ~12:35 and misses the late rally to the official 6.70 close; backfill/fix required
