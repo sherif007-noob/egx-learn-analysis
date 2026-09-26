@@ -51,7 +51,7 @@
 - Important zones: 133–135 nearby support, 130–131 major short-term support, 138 then 140 resistance.
 - Candidate for core/medium-term bucket.
 - Rule learned: protect winners; a partial-profit framework near major resistance can reduce round-tripping.
-- Data-quality note: intraday/official-close reconciliation in EGX-Portfolio needs review.
+- Data-quality correction: ETEL Sep 24 close of 135.99 in EGX-Portfolio matches current external historical data. A prior 134.50-close mismatch was a false alarm; do not treat ETEL as an identified close-reconciliation bug.
 
 ### ORAS
 - Position: 1 share around 861; portfolio impact is immaterial.
