@@ -59,6 +59,12 @@ Move from intuition/tips/top-gainers chasing to a repeatable process:
 
 ### 7. Risk management
 - Position size from EGP risk, not excitement
+- Understand **R** as the amount intentionally risked if invalidation is hit
+- Initial working baseline: 1R = 0.50% of equity
+- Pilot = 0.5R; maximum daily loss = 2R
+- Formula: shares = max EGP risk / risk per share
+- Then apply a separate maximum-notional cap
+- Add a slippage cushion for thin names
 - Maximum risk per trade
 - Maximum daily loss
 - No revenge trades
@@ -70,7 +76,9 @@ Move from intuition/tips/top-gainers chasing to a repeatable process:
 - Correlated EGX exposure
 - Cash is a position
 - Position concentration
+- Protected cash vs deployable cash
 - Protect winners; do not automatically sell winners and hold losers
+- Repair/legacy positions should not become a permanent bucket
 
 ### 9. Behavioral review
 Case studies from our own history:
