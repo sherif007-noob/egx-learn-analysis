@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-09-27T00:53:11.833Z",
+  "fetched_at": "2026-09-27T07:01:29.368Z",
   "interval_minutes": 1,
   "requested_bars_per_ticker": 5000,
   "tickers": {
@@ -169,6 +169,76 @@
         "low": 2.06,
         "close": 2.11,
         "volume": 117521111
+      }
+    },
+    "ARCC": {
+      "resolved_symbol": "ARCC",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-25T09:37:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 68.54,
+        "high": 68.9,
+        "low": 66.12,
+        "close": 67,
+        "volume": 388742
+      }
+    },
+    "MBSC": {
+      "resolved_symbol": "MBSC",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-19T10:46:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 348,
+        "high": 348,
+        "low": 325,
+        "close": 329.99,
+        "volume": 107420
+      }
+    },
+    "MCQE": {
+      "resolved_symbol": "MCQE",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-20T11:06:00.000Z",
+      "last_bar_utc": "2026-09-24T11:28:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 203.11,
+        "high": 206.54,
+        "low": 197.51,
+        "close": 206.54,
+        "volume": 62058
+      }
+    },
+    "SCEM": {
+      "resolved_symbol": "SCEM",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-24T09:13:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 84,
+        "high": 86,
+        "low": 83.05,
+        "close": 84.57,
+        "volume": 362760
+      }
+    },
+    "SVCE": {
+      "resolved_symbol": "SVCE",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-26T07:03:00.000Z",
+      "last_bar_utc": "2026-09-24T11:28:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 11.06,
+        "high": 11.1,
+        "low": 10.7,
+        "close": 10.9,
+        "volume": 4530499
       }
     }
   }

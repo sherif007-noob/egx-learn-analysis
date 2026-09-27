@@ -8,7 +8,7 @@
       "ok": true
     }
   ],
-  "fetched_at": "2026-09-27T00:53:20.401Z",
+  "fetched_at": "2026-09-27T07:01:35.720Z",
   "interval_minutes": 1,
   "bars_requested": 5000,
   "bars_returned": 5000,
@@ -173,7 +173,7 @@
       "high": 1.12,
       "low": 1.04,
       "close": 1.09,
-      "volume": 229089985
+      "volume": 229116985
     },
     {
       "date": "2026-09-23",
@@ -39854,7 +39854,7 @@
       "high": 1.12,
       "low": 1.11,
       "close": 1.11,
-      "volume": 2588322
+      "volume": 2615322
     },
     {
       "timestamp_utc": "2026-09-22T09:03:00.000Z",
