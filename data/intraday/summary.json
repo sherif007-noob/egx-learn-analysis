@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-09-27T00:47:35.780Z",
+  "fetched_at": "2026-09-27T00:53:11.833Z",
   "interval_minutes": 1,
   "requested_bars_per_ticker": 5000,
   "tickers": {
@@ -71,6 +71,104 @@
         "low": 16.06,
         "close": 17.65,
         "volume": 17117133
+      }
+    },
+    "TAQA": {
+      "resolved_symbol": "TAQA",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-24T08:45:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 16.55,
+        "high": 17.3,
+        "low": 16.35,
+        "close": 17.12,
+        "volume": 14130466
+      }
+    },
+    "MAAL": {
+      "resolved_symbol": "MAAL",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-07-21T09:36:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 10.22,
+        "high": 11.24,
+        "low": 9.99,
+        "close": 10.7,
+        "volume": 7964912
+      }
+    },
+    "OFH": {
+      "resolved_symbol": "OFH",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-25T07:27:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 1.09,
+        "high": 1.1,
+        "low": 0.98,
+        "close": 1.02,
+        "volume": 404152619
+      }
+    },
+    "SWDY": {
+      "resolved_symbol": "SWDY",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-30T07:44:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 124,
+        "high": 124.98,
+        "low": 116.5,
+        "close": 118.5,
+        "volume": 1241720
+      }
+    },
+    "GIHD": {
+      "resolved_symbol": "GIHD",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-11T07:19:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 74.45,
+        "high": 78.73,
+        "low": 73.05,
+        "close": 76.49,
+        "volume": 1230517
+      }
+    },
+    "FWRY": {
+      "resolved_symbol": "FWRY",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-30T07:53:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 18.9,
+        "high": 19,
+        "low": 17.5,
+        "close": 18.75,
+        "volume": 7320982
+      }
+    },
+    "OIH": {
+      "resolved_symbol": "OIH",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-25T07:43:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 2.17,
+        "high": 2.17,
+        "low": 2.06,
+        "close": 2.11,
+        "volume": 117521111
       }
     }
   }
