@@ -215,3 +215,79 @@ Secondary:
 
 Selection principle:
 **For day trading, prefer tradable liquidity + readable structure over the stock with the largest percentage range.**
+
+
+## 2026-09-27 — Deep dive after whole-market scan: TAQA & MAAL
+
+### TAQA — Taqa Arabia
+
+**Scanner**
+- Sep 24 close: 17.12 (+2.51%)
+- Range: 16.35–17.30 (~5.55%)
+- Volume: ~14.13m shares
+- Scanner RVOL10: ~2.77x
+- Approx turnover: ~EGP 242m
+- Close location: ~81% of the daily range
+- Scanner RSI: ~64
+
+**1m structure**
+- Opened 16.55 and tested 16.35 at 10:03, then recovered.
+- First 30 minutes: 16.35–16.80.
+- Major momentum ignition around 11:12: ~839.6k shares in one minute while price pushed 16.89 → 17.05.
+- Session high 17.30 at 11:57.
+- Midday pullback eventually reached ~16.45 around 13:16.
+- Important late-session feature: the stock rebuilt from the 16.45–16.55 area and climbed back toward 17.20 around 14:11.
+- Closed 17.12, above approximate session VWAP ~16.90.
+- Previous day (Sep 23): +11.33%, ~32.61m shares, close at 16.70.
+
+**Interpretation**
+- This is a cleaner combination of liquidity, relative volume, readable intraday structure, and strong closing recovery than most scanner names.
+- The move is already extended across two sessions, so the setup is not “buy because momentum exists.” The trade requires a controlled hold/reclaim and nearby invalidation.
+- A 16m-share treasury-stock sale was executed on Sep 23. That contributed material supply/turnover, yet the stock still closed +11.33% that day and followed with another positive session. This is evidence that the market absorbed a large amount of supply while price stayed strong, but it is not proof that the treasury sale itself was bullish.
+- Earlier September catalyst: a ~$14.8m Jordan gas-pipeline contract was disclosed.
+
+**Map for Sep 28**
+- Decision/support: 16.90–17.10
+- Breakout trigger area: 17.20–17.30
+- First upside: 17.49–17.50
+- Next: ~17.80
+- Major prior high: 18.30
+- Lower supports: 16.70, then 16.45–16.55, then 16.35
+
+**Use**
+- Promoted to **primary day-trade screen**.
+
+### MAAL — Marseilia Egyptian Gulf Real Estate Investment
+
+**Scanner**
+- Sep 24 close: 10.70 (+4.39%)
+- Range: 9.99–11.24 (~11.68%)
+- Volume: ~7.96m
+- Scanner RVOL10: ~4.92x
+- Approx turnover: ~EGP 85m
+- Close location: ~57%
+- Scanner RSI: ~71.8
+
+**1m structure**
+- Very volatile open: 10.22 → 9.99 low at 10:01, then a sharp push to 11.00 by ~10:08.
+- Session high 11.24 at 11:27.
+- The breakout did not hold; price faded progressively and reached ~10.31 around 13:10–13:18.
+- A very large minute around 12:39 (~697.9k shares) printed near 10.70–10.75, followed by continued weakness toward the 10.3s.
+- Late session stabilized around 10.50–10.73 and closed 10.70.
+- Approx session VWAP ~10.79, so the close finished slightly below VWAP.
+- The stock had already risen strongly for several sessions: 8.66 close Sep 21 → 9.14 Sep 22 → 10.25 Sep 23 → 10.70 Sep 24.
+
+**Event risk**
+- GAFI called an ordinary general meeting for Sep 26 to discuss an inspection report concerning actions of some board members and resulting consequences.
+- As of the Sep 27 search, no reliable indexed source was found confirming the outcome of that meeting. If quorum was not reached, the invitation stated a second meeting would be Oct 3.
+- Because this can materially change sentiment, MAAL should not be promoted to a primary trade until the newest disclosure is checked before the open.
+
+**Map for Sep 28**
+- Immediate pivot: 10.65–10.75
+- First reclaim: 10.85–11.00
+- Major resistance/high: 11.14–11.24
+- Supports: 10.50–10.55, then 10.31–10.40, then 9.99–10.05
+
+**Use**
+- **Event-risk backup only** until the Sep 26 meeting outcome is known.
+- If no adverse disclosure appears and live price reclaims 10.85–11.00 with real price progress, it can become a day-trade candidate.
