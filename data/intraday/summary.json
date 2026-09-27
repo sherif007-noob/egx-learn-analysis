@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-09-27T00:02:49.318Z",
+  "fetched_at": "2026-09-27T00:31:01.930Z",
   "interval_minutes": 1,
   "requested_bars_per_ticker": 5000,
   "tickers": {
@@ -29,6 +29,34 @@
         "low": 50.5,
         "close": 52.17,
         "volume": 2522586
+      }
+    },
+    "KORA": {
+      "resolved_symbol": "KORA",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-30T09:22:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 6.29,
+        "high": 6.7,
+        "low": 5.88,
+        "close": 6.7,
+        "volume": 53401282
+      }
+    },
+    "RKAZ": {
+      "resolved_symbol": "RKAZ",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-06-11T11:04:00.000Z",
+      "last_bar_utc": "2026-09-24T11:14:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 5.15,
+        "high": 5.6,
+        "low": 5.06,
+        "close": 5.48,
+        "volume": 611980
       }
     }
   }
