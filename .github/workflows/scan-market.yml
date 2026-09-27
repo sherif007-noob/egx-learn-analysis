@@ -1,0 +1,41 @@
+name: Scan EGX Market
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/scanMarket.ts'
+      - '.github/workflows/scan-market.yml'
+      - 'package.json'
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Scan full EGX universe
+        run: npm run scan:market
+
+      - name: Commit latest scan
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/scans
+          if git diff --cached --quiet; then
+            echo "No scan changes."
+            exit 0
+          fi
+          git commit -m "data: refresh EGX market scan"
+          git push
