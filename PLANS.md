@@ -269,3 +269,28 @@ Review EGX-Portfolio:
 - use transaction ledger as source of truth for holdings
 - continue 1m history coverage for forensic review
 - KORA Sep 24 intraday history is incomplete after ~12:35 and misses the late rally to the official 6.70 close; backfill/fix required
+
+
+## 2026-09-27 — Next-session candidate priority
+
+Primary screens at the open:
+- **CRST**
+- **KORA**
+
+Backup only if they produce a cleaner live setup:
+- **NAPR**
+- **RKAZ**
+
+Decision rule:
+- We still open **at most one new active trade**.
+- The selected stock must show the cleanest live combination of: tight/usable spread, enough liquidity, clear trigger, nearby invalidation, and actual price progress with executions.
+- If CRST and KORA both trigger, prefer the one with the cleaner tape/price response at that moment rather than pre-committing before the open.
+- NAPR can replace them only if it holds its support area and reclaims the mapped pivot with controlled spread.
+- RKAZ should not be used unless live liquidity changes materially; sparse prints make reliable entries/exits difficult.
+
+### RKAZ watch map
+- Sep 24 range: roughly 5.06–5.60.
+- Near-term upper area: 5.48–5.60.
+- Lower references: 5.26–5.30, then 5.06–5.15.
+- Because prints are sparse, levels are less reliable than on CRST/KORA.
+- Limit orders only; no market-order chase.
