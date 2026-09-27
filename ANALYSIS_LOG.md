@@ -189,3 +189,29 @@ Sources:
 - Reason: huge volatility and attention, but the Sep 24 57.80 breakout failed and the stock closed far below its intraday high.
 - Any long setup should require a fresh price/tape trigger rather than assuming the recent +70% run must continue.
 
+
+
+## 2026-09-27 — Four-candidate day-trade comparison
+
+### Data refresh
+The standalone TradingView fetcher now covers **CRST, NAPR, KORA, RKAZ** and successfully pulled 5,000 one-minute bars for each.
+
+### RKAZ
+- Sep 24 intraday source data: open 5.15, high 5.60, low 5.06, last 1m print 5.48, volume ~611.98k.
+- External daily feeds disagree on the formal Sep 24 close (some show 5.26 while the app/TradingView last prints show 5.48). Treat the close field cautiously until reconciled.
+- The 1m tape is extremely sparse: many minutes have no trade, and many printed bars contain only 1–100 shares.
+- This is the key issue for day trading: the percentage range looks attractive, but actual liquidity is poor and price can jump between levels with tiny prints.
+- Post-close depth was crossed/sparse and therefore not a usable live spread reference.
+- Current conclusion: **watchlist only, not a preferred beginner day-trade vehicle.**
+
+### Candidate selection for next session
+Primary focus:
+1. **CRST** — cleaner structure, strong close near the day high, narrow normal spread, and clear nearby trigger/invalidation zones.
+2. **KORA** — highest-quality liquidity/momentum combination, very strong close at the session high, but more volatile and prone to fast reversals.
+
+Secondary:
+- **NAPR** — excellent attention and turnover, but Sep 24 produced a major failed move from 57.80 back to 52.17; use only if a fresh reclaim setup appears.
+- **RKAZ** — percentage volatility is attractive but the tape is too sparse for a beginner; slippage/gapping between prints is the main problem.
+
+Selection principle:
+**For day trading, prefer tradable liquidity + readable structure over the stock with the largest percentage range.**
