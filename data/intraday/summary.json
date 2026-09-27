@@ -1,0 +1,35 @@
+{
+  "fetched_at": "2026-09-27T00:02:49.318Z",
+  "interval_minutes": 1,
+  "requested_bars_per_ticker": 5000,
+  "tickers": {
+    "CRST": {
+      "resolved_symbol": "CRST",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-08-30T07:59:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 3.61,
+        "high": 3.75,
+        "low": 3.59,
+        "close": 3.72,
+        "volume": 51598217
+      }
+    },
+    "NAPR": {
+      "resolved_symbol": "EGS370O1C013",
+      "bars_returned": 5000,
+      "first_bar_utc": "2026-06-22T09:03:00.000Z",
+      "last_bar_utc": "2026-09-24T11:29:00.000Z",
+      "latest_session": {
+        "date": "2026-09-24",
+        "open": 53.6,
+        "high": 57.8,
+        "low": 50.5,
+        "close": 52.17,
+        "volume": 2522586
+      }
+    }
+  }
+}
