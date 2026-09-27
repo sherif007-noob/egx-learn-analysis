@@ -1,0 +1,55 @@
+name: Fetch EGX Intraday
+
+on:
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: 'Comma-separated EGX tickers'
+        required: false
+        default: 'CRST,NAPR'
+        type: string
+      bars:
+        description: '1m bars requested per ticker'
+        required: false
+        default: '5000'
+        type: string
+  push:
+    paths:
+      - 'package.json'
+      - 'scripts/fetchIntraday.ts'
+      - '.github/workflows/fetch-intraday.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Fetch TradingView 1m data
+        env:
+          EGX_INTRADAY_TICKERS: ${{ inputs.tickers || 'CRST,NAPR' }}
+          EGX_INTRADAY_BARS: ${{ inputs.bars || '5000' }}
+        run: npm run fetch:intraday
+
+      - name: Commit refreshed data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/intraday
+          if git diff --cached --quiet; then
+            echo "No intraday data changes to commit."
+            exit 0
+          fi
+          git commit -m "data: refresh intraday CRST NAPR"
+          git push
