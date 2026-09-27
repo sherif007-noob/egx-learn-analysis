@@ -6,6 +6,8 @@ type HistoryBar = [number, number, number, number, number, number?];
 const TICKER_METADATA: Record<string, { persistedSymbol?: string; isin?: string }> = {
   CRST: { persistedSymbol: 'CRST', isin: 'EGS23141C012' },
   NAPR: { persistedSymbol: 'EGS370O1C013', isin: 'EGS370O1C013' },
+  KORA: { persistedSymbol: 'KORA', isin: 'EGS07911C018' },
+  RKAZ: { persistedSymbol: 'RKAZ', isin: 'EGS521T1C016' },
 };
 
 function normalizeTicker(value: string): string {
@@ -17,7 +19,7 @@ function unique<T>(items: T[]): T[] {
 }
 
 function requestedTickers(): string[] {
-  const raw = process.env.EGX_INTRADAY_TICKERS || 'CRST,NAPR';
+  const raw = process.env.EGX_INTRADAY_TICKERS || 'CRST,NAPR,KORA,RKAZ';
   return unique(raw.split(',').map(normalizeTicker).filter(Boolean));
 }
 
