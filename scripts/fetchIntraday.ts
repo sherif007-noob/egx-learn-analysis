@@ -20,7 +20,7 @@ function unique<T>(items: T[]): T[] {
 }
 
 function requestedTickers(): string[] {
-  const raw = process.env.EGX_INTRADAY_TICKERS || 'CRST,NAPR,KORA,RKAZ,RUBX,TAQA,MAAL,OFH,SWDY,GIHD,FWRY,OIH';
+  const raw = process.env.EGX_INTRADAY_TICKERS || 'CRST,NAPR,KORA,RKAZ,RUBX,TAQA,MAAL,OFH,SWDY,GIHD,FWRY,OIH,ARCC,MBSC,MCQE,SCEM,SVCE';
   return unique(raw.split(',').map(normalizeTicker).filter(Boolean));
 }
 
