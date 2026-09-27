@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "fetch:intraday": "tsx scripts/fetchIntraday.ts"
+    "fetch:intraday": "tsx scripts/fetchIntraday.ts",
+    "scan:market": "tsx scripts/scanMarket.ts"
   },
   "dependencies": {
     "@ch99q/twc": "^0.1.4",
