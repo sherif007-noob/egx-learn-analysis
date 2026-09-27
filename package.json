@@ -1,0 +1,14 @@
+{
+  "name": "egx-learn-analysis",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "fetch:intraday": "tsx scripts/fetchIntraday.ts"
+  },
+  "dependencies": {
+    "@ch99q/twc": "^0.1.4",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2"
+  }
+}
