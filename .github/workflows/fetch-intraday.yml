@@ -6,7 +6,7 @@ on:
       tickers:
         description: 'Comma-separated EGX tickers'
         required: false
-        default: 'CRST,NAPR,KORA,RKAZ,RUBX,TAQA,MAAL,OFH,SWDY,GIHD,FWRY,OIH'
+        default: 'CRST,NAPR,KORA,RKAZ,RUBX,TAQA,MAAL,OFH,SWDY,GIHD,FWRY,OIH,ARCC,MBSC,MCQE,SCEM,SVCE'
         type: string
       bars:
         description: '1m bars requested per ticker'
@@ -38,7 +38,7 @@ jobs:
 
       - name: Fetch TradingView 1m data
         env:
-          EGX_INTRADAY_TICKERS: ${{ inputs.tickers || 'CRST,NAPR,KORA,RKAZ,RUBX,TAQA,MAAL,OFH,SWDY,GIHD,FWRY,OIH' }}
+          EGX_INTRADAY_TICKERS: ${{ inputs.tickers || 'CRST,NAPR,KORA,RKAZ,RUBX,TAQA,MAAL,OFH,SWDY,GIHD,FWRY,OIH,ARCC,MBSC,MCQE,SCEM,SVCE' }}
           EGX_INTRADAY_BARS: ${{ inputs.bars || '5000' }}
         run: npm run fetch:intraday
 
