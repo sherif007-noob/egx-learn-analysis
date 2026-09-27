@@ -159,7 +159,7 @@ Refined sizing:
 
 ### Portfolio-level rules
 - No more than **one new position** today.
-- KORA is the only planned new-trade candidate unless a completely different setup is reviewed first.
+- New-trade candidate pool: **KORA, CRST, NAPR**. Open at most one new position; whichever gives the cleanest valid setup wins. No forcing a trade just because a name was preselected.
 - Protected cash stays at **15% of equity minimum**.
 - Maximum realized active-trading loss for the day: **2R ≈ EGP 660**.
 - If ACTF is actively breaking down at the open, manage ACTF before initiating KORA.
@@ -188,6 +188,30 @@ Refined sizing:
 - A possible swing/day pilot requires rejection of the low plus reclaim of the nearby level with tape support.
 - If 6.15 fails, next major watch zone is 5.75–5.90.
 - A sustained break below 5.75 invalidates the current long-continuation idea.
+
+### CRST — new day-trade candidate
+- Reference close: 3.72; Sep 24 range 3.59–3.75.
+- Primary decision zone: **3.70–3.75**.
+- Valid momentum trigger: 3.70 holds and 3.73/3.75 is reclaimed/broken with actual follow-through, not just a visible ask disappearing.
+- Pilot: roughly **900–1,000 shares** if the live structure supports a nearby invalidation.
+- First upside test: **3.79–3.80**. If this area rejects repeatedly, partial profit is preferred.
+- If 3.80 holds, next areas: **3.88–3.90**, then the heavy **3.98–4.10** supply/52-week-high area.
+- If the stock opens weak below 3.66, no breakout chase. Watch **3.59–3.60** for rejection/reclaim.
+- A sustained break below **3.55** materially weakens the long day-trade thesis.
+- If it gaps directly above 3.79, wait for a controlled retest instead of chasing.
+- Post-close depth was ask-heavy (~78% visible ask), so the first test is whether those offers remain, cancel, or get executed through.
+
+### NAPR — new high-volatility day-trade candidate
+- Reference close: 52.17; Sep 24 range 50.50–57.80.
+- This is a **day-trade first** candidate because Thursday's 57.80 breakout failed and price closed far from the high.
+- Primary defense/decision zone: **50.50–52.00**.
+- If price holds that zone and reclaims **53.5–54.0** with improving tape, a small pilot can be considered.
+- Pilot: roughly **50–70 shares** because the stock is much more volatile in EGP/share terms.
+- First upside zone: **55.0–56.5**.
+- Major breakout level: **57.80**. Do not anticipate it; require real acceptance above it.
+- If NAPR gaps above 55, no blind chase; wait for pullback/reclaim.
+- If **50.50** breaks and cannot reclaim, no long continuation trade; next historical reference is roughly **48–49.2**.
+- Post-close spread was ~6.7%; treat that as a closed/sparse book, but use it as a reminder that slippage can be severe. Use limit orders only.
 
 ### ACTF — manage existing active position
 - **No add.**
@@ -231,7 +255,7 @@ Refined sizing:
 - One-share tracking position. No portfolio action planned.
 
 ### What to inspect live
-For KORA and ACTF, prioritize:
+For KORA, CRST, NAPR and ACTF, prioritize:
 1. Current Price Depth
 2. Recent Trades / tape
 3. 1m price response at the mapped levels
