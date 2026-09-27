@@ -34,6 +34,7 @@ Protected cash floor: ~**EGP 9,900 (15%)**
 ## Primary screens
 1. **CRST**
 2. **KORA**
+3. **RUBX**
 
 Do **not** choose the stock before the market gives the setup.
 
@@ -46,7 +47,7 @@ Whichever of CRST/KORA gives the cleaner combination of:
 
 gets the trade.
 
-If neither gives that setup, move to **NAPR only if its own plan triggers**.
+If none of the three gives that setup, move to **NAPR only if its own plan triggers**.
 
 ---
 
@@ -138,7 +139,50 @@ Below ~6.50:
 
 ---
 
-# 5. NAPR — Backup only
+
+# 5. RUBX — High-liquidity momentum backup / possible primary if cleaner live
+
+### Why it matters
+- Previous close: **17.65**
+- Previous range: **16.06–18.59**
+- Previous volume: about **17.12m**
+- The stock has been extremely volatile: +19.99% on Sep 20, -7.87% on Sep 21, -5.80% on Sep 22, +19.97% on Sep 23, then +4.19% on Sep 24.
+- Sep 24 1m structure showed an early push toward 18.49, a deep midday sell-off to 16.06, then a powerful afternoon rebound to 18.59 before closing 17.65.
+- This makes RUBX tradable but very whipsaw-prone.
+
+### Map
+- Immediate decision area: **17.50–17.70**
+- First upside area: **18.00–18.25**
+- Major breakout/rejection area: **18.49–18.59**
+- First lower support: **17.10–17.30**
+- Deeper support: **16.60–16.80**
+- Major session low / line in the sand: **16.06**
+
+### Preferred long setup
+We want:
+1. Price holds around **17.50–17.70** or reclaims it after a controlled pullback.
+2. Actual executions start progressing upward through 17.80–18.00.
+3. Price remains above the reclaimed area instead of immediately fading.
+
+### Entry
+- Pilot only: roughly **220–280 shares**, depending on the live invalidation and spread.
+- Limit Order only.
+
+### Management
+- **18.00–18.25**: first test; if buying stalls and offers replenish, consider partial.
+- **18.49–18.59**: major previous-session rejection/high zone. Require real acceptance above it before treating it as a breakout.
+- If 18.59 breaks and holds, reassess for continuation rather than pre-setting an aggressive target.
+
+### No trade if
+- Price is whipping between levels with no stable structure.
+- 17.50 fails and price cannot reclaim it.
+- The stock gaps directly into/above 18.5 and forces a chase.
+- Spread becomes too wide for controlled risk.
+
+### Why not automatically first choice
+RUBX has excellent liquidity and range, but the previous session moved 18.49 → 16.06 → 18.59 → 17.65. That is a very large two-way auction. For a beginner, CRST/KORA may be easier to read if their live structure is cleaner. RUBX becomes the trade if its live tape is clearer than theirs.
+
+# 6. NAPR — Backup only
 
 ### Why backup
 NAPR has strong attention and liquidity, but the previous session ran to **57.80** and then closed **52.17**. That is a large failed intraday move.
@@ -166,7 +210,7 @@ NAPR has strong attention and liquidity, but the previous session ran to **57.80
 
 ---
 
-# 6. RKAZ — Observation only
+# 7. RKAZ — Observation only
 
 ### Why no trade
 - Previous range: roughly **5.06–5.60**.
@@ -184,7 +228,7 @@ Use RKAZ to practice reading Depth/Tape, not as tomorrow's preferred execution v
 
 ---
 
-# 7. Existing positions — management rules
+# 8. Existing positions — management rules
 
 ## ACTF
 **Priority existing risk position. No add.**
@@ -239,9 +283,9 @@ One-share tracking position. No action planned.
 
 ---
 
-# 8. Live reading checklist
+# 9. Live reading checklist
 
-For **CRST / KORA / NAPR / ACTF**, inspect in this order:
+For **CRST / KORA / RUBX / NAPR / ACTF**, inspect in this order:
 
 1. **Where is price?** At a mapped support/resistance level or in the middle of nowhere?
 2. **Spread:** tight enough to enter/exit?
@@ -259,12 +303,13 @@ Golden rule:
 
 ---
 
-# 9. Opening workflow
+# 10. Opening workflow
 
 ### Before 10:00
 Open:
 - CRST
 - KORA
+- RUBX
 - ACTF
 - NAPR backup
 
@@ -280,7 +325,7 @@ Watch:
 
 ### Trade selection
 - **One new trade maximum.**
-- CRST or KORA gets priority.
+- CRST / KORA / RUBX are the primary new-trade screens.
 - NAPR only replaces them if its setup is visibly cleaner.
 - RKAZ stays observational.
 
@@ -296,9 +341,9 @@ Do nothing.
 
 ---
 
-# 10. Data notes
+# 11. Data notes
 
-- CRST, NAPR, KORA, and RKAZ now have standalone TradingView **1m** data in this repository.
+- CRST, NAPR, KORA, RKAZ, and RUBX now have standalone TradingView **1m** data in this repository.
 - KORA's previous incomplete 5m issue is no longer a blocker for analysis because the new standalone 1m fetch includes the full Sep 24 session.
 - RKAZ official-close representations differ between some feeds; use live session data rather than relying on the disputed prior close for execution.
 
