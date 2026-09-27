@@ -6,7 +6,7 @@ on:
       tickers:
         description: 'Comma-separated EGX tickers'
         required: false
-        default: 'CRST,NAPR'
+        default: 'CRST,NAPR,KORA,RKAZ'
         type: string
       bars:
         description: '1m bars requested per ticker'
@@ -38,7 +38,7 @@ jobs:
 
       - name: Fetch TradingView 1m data
         env:
-          EGX_INTRADAY_TICKERS: ${{ inputs.tickers || 'CRST,NAPR' }}
+          EGX_INTRADAY_TICKERS: ${{ inputs.tickers || 'CRST,NAPR,KORA,RKAZ' }}
           EGX_INTRADAY_BARS: ${{ inputs.bars || '5000' }}
         run: npm run fetch:intraday
 
@@ -51,5 +51,5 @@ jobs:
             echo "No intraday data changes to commit."
             exit 0
           fi
-          git commit -m "data: refresh intraday CRST NAPR"
+          git commit -m "data: refresh intraday candidate set"
           git push
