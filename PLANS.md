@@ -6,8 +6,8 @@
 ## 1. Non-negotiable rules
 
 - **Maximum one new active trade.**
-- Primary watchlist: **CRST + KORA**.
-- Backup only: **NAPR**.
+- Primary watchlist: **TAQA + KORA**.
+- First backup: **CRST**. High-volatility backup: **RUBX**. Event-risk backup: **MAAL**. Last backup: **NAPR**.
 - **RKAZ = no-trade / observation only** unless live liquidity changes dramatically.
 - No averaging down in losing positions.
 - No market orders in fast/thin names.
@@ -32,13 +32,18 @@ Protected cash floor: ~**EGP 9,900 (15%)**
 # 2. Monday priority
 
 ## Primary screens
-1. **CRST**
+1. **TAQA**
 2. **KORA**
-3. **RUBX**
+
+## Backups
+1. **CRST** — cleaner structure but lower recent relative volume
+2. **RUBX** — liquid but much more whipsaw-prone
+3. **MAAL** — high activity, but event/governance risk must be checked before the open
+4. **NAPR** — only on a clean reclaim setup
 
 Do **not** choose the stock before the market gives the setup.
 
-Whichever of CRST/KORA gives the cleaner combination of:
+Whichever of TAQA/KORA gives the cleaner combination of:
 - usable spread,
 - enough liquidity,
 - clear level,
@@ -47,11 +52,54 @@ Whichever of CRST/KORA gives the cleaner combination of:
 
 gets the trade.
 
-If none of the three gives that setup, move to **NAPR only if its own plan triggers**.
+If neither primary gives that setup, move through the backups in order only if their own plan triggers.
 
 ---
 
-# 3. CRST — Primary day-trade setup
+
+# 3. TAQA — Primary day-trade setup
+
+### Why it moved up the list
+- Previous close: **17.12**
+- Previous range: **16.35–17.30**
+- Previous volume: ~**14.13m**
+- Scanner RVOL10: ~**2.77x**
+- Approx turnover: ~**EGP 242m**
+- Closed in the upper ~81% of the day's range and above approximate VWAP ~16.90.
+- Sep 23 was already +11.33% on ~32.61m shares.
+- A 16m-share treasury-stock sale was executed Sep 23; despite that supply, price stayed strong across Sep 23–24.
+
+### Map
+- Immediate decision/support: **16.90–17.10**
+- Breakout area: **17.20–17.30**
+- First upside: **17.49–17.50**
+- Next: **~17.80**
+- Major prior high: **18.30**
+- Lower supports: **16.70**, then **16.45–16.55**, then **16.35**
+
+### Preferred setup
+We want:
+1. Price tests roughly 16.90–17.10 and selling fails to push it materially lower.
+2. Actual trades begin progressing back through 17.10–17.20.
+3. 17.30 is consumed and price continues above it instead of immediately falling back.
+
+### Entry
+- Pilot: roughly **230–280 shares**, only if the live invalidation keeps risk inside plan.
+- Limit Order only.
+
+### Management
+- 17.49–17.50: first resistance test; repeated rejection = consider partial.
+- If accepted above 17.50, next watch ~17.80.
+- 18.30 is the major prior high and should be treated as heavy resistance until proven otherwise.
+
+### No trade if
+- 16.90 fails easily and price cannot reclaim it.
+- It gaps directly into/above 17.50 and forces a chase.
+- Buying volume appears large but price cannot make upward progress.
+
+---
+
+# 4. CRST — First backup
 
 ### Reference map
 - Previous close: **3.72**
@@ -94,7 +142,7 @@ If it opens weak:
 
 ---
 
-# 4. KORA — Primary momentum setup
+# 5. KORA — Primary momentum setup
 
 ### Reference map
 - Previous close/high: **6.70**
@@ -140,7 +188,7 @@ Below ~6.50:
 ---
 
 
-# 5. RUBX — High-liquidity momentum backup / possible primary if cleaner live
+# 6. RUBX — High-liquidity backup
 
 ### Why it matters
 - Previous close: **17.65**
@@ -182,7 +230,47 @@ We want:
 ### Why not automatically first choice
 RUBX has excellent liquidity and range, but the previous session moved 18.49 → 16.06 → 18.59 → 17.65. That is a very large two-way auction. For a beginner, CRST/KORA may be easier to read if their live structure is cleaner. RUBX becomes the trade if its live tape is clearer than theirs.
 
-# 6. NAPR — Backup only
+
+# 7. MAAL — Event-risk backup
+
+### Why it is interesting
+- Previous close: **10.70**
+- Previous range: **9.99–11.24**
+- Previous volume: ~**7.96m**
+- Scanner RVOL10: ~**4.92x**
+- Range: ~**11.7%**
+- It has run strongly for several sessions.
+
+### Why it is not primary
+- Sep 24 high **11.24** failed to hold; price later fell to roughly **10.31** and closed 10.70.
+- Close was slightly below approximate VWAP (~10.79).
+- A Sep 26 general meeting was called to discuss an inspection report concerning actions of some board members.
+- **Before trading MAAL, check the newest disclosure/result of that meeting.**
+
+### Map
+- Pivot: **10.65–10.75**
+- Reclaim area: **10.85–11.00**
+- Major resistance: **11.14–11.24**
+- Supports: **10.50–10.55**, **10.31–10.40**, **9.99–10.05**
+
+### Only valid long setup
+1. No new adverse disclosure changes the setup.
+2. Price holds/reclaims 10.65–10.75.
+3. Actual executions push through **10.85–11.00**.
+4. Price does not immediately fade back below the reclaim.
+
+### Size
+- Tentative pilot: roughly **350–450 shares**, only after the live invalidation is known.
+- Limit Order only.
+
+### No trade if
+- Meeting/disclosure creates unresolved negative event risk.
+- 10.50 fails and cannot be reclaimed.
+- The stock spikes directly into 11.14–11.24 and forces a chase.
+
+---
+
+# 8. NAPR — Last backup
 
 ### Why backup
 NAPR has strong attention and liquidity, but the previous session ran to **57.80** and then closed **52.17**. That is a large failed intraday move.
@@ -210,7 +298,7 @@ NAPR has strong attention and liquidity, but the previous session ran to **57.80
 
 ---
 
-# 7. RKAZ — Observation only
+# 9. RKAZ — Observation only
 
 ### Why no trade
 - Previous range: roughly **5.06–5.60**.
@@ -228,7 +316,7 @@ Use RKAZ to practice reading Depth/Tape, not as tomorrow's preferred execution v
 
 ---
 
-# 8. Existing positions — management rules
+# 10. Existing positions — management rules
 
 ## ACTF
 **Priority existing risk position. No add.**
@@ -283,9 +371,9 @@ One-share tracking position. No action planned.
 
 ---
 
-# 9. Live reading checklist
+# 11. Live reading checklist
 
-For **CRST / KORA / RUBX / NAPR / ACTF**, inspect in this order:
+For **TAQA / KORA / CRST / RUBX / MAAL / NAPR / ACTF**, inspect in this order:
 
 1. **Where is price?** At a mapped support/resistance level or in the middle of nowhere?
 2. **Spread:** tight enough to enter/exit?
@@ -303,15 +391,16 @@ Golden rule:
 
 ---
 
-# 10. Opening workflow
+# 12. Opening workflow
 
 ### Before 10:00
 Open:
-- CRST
+- TAQA
 - KORA
-- RUBX
+- CRST backup
 - ACTF
-- NAPR backup
+
+Keep RUBX / MAAL / NAPR as secondary tabs only.
 
 Have **Depth + Trades** ready.
 
@@ -325,8 +414,10 @@ Watch:
 
 ### Trade selection
 - **One new trade maximum.**
-- CRST / KORA / RUBX are the primary new-trade screens.
-- NAPR only replaces them if its setup is visibly cleaner.
+- **TAQA / KORA are the primary new-trade screens.**
+- CRST is first backup; RUBX next if its tape is unusually clean.
+- MAAL requires a fresh disclosure check before any entry.
+- NAPR is last backup.
 - RKAZ stays observational.
 
 ### After entry
@@ -341,9 +432,9 @@ Do nothing.
 
 ---
 
-# 11. Data notes
+# 13. Data notes
 
-- CRST, NAPR, KORA, RKAZ, and RUBX now have standalone TradingView **1m** data in this repository.
+- CRST, NAPR, KORA, RKAZ, RUBX, TAQA, MAAL and the broader scanner shortlist now have standalone TradingView **1m** data in this repository.
 - KORA's previous incomplete 5m issue is no longer a blocker for analysis because the new standalone 1m fetch includes the full Sep 24 session.
 - RKAZ official-close representations differ between some feeds; use live session data rather than relying on the disputed prior close for execution.
 
