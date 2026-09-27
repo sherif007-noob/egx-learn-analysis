@@ -74,6 +74,118 @@
 - Style fit: strongest current fit is day/swing trading. It can become an investment candidate only after a deeper valuation, balance-sheet, cash-flow, backlog-conversion, and post-rights analysis.
 - Rule learned: a strong close at the high after a violent intraday reversal is actionable context, but the next entry still needs an early trigger and defined invalidation rather than chasing the opening spike.
 
-### Pending
-- Final portfolio classification
-- Exact risk budget and position-sizing framework
+
+## 2026-09-27 — Day-trade candidate review: CRST & NAPR
+
+### Data tooling
+- Added a standalone TradingView 1-minute fetcher to this repo, adapted from the EGX-Portfolio TradingView ingestion approach.
+- Files:
+  - `scripts/fetchIntraday.ts`
+  - `.github/workflows/fetch-intraday.yml`
+  - `data/intraday/CRST-1m.csv|json`
+  - `data/intraday/NAPR-1m.csv|json`
+- The first run successfully fetched 5,000 1m bars for each ticker.
+- CRST resolves directly as `CRST`.
+- NAPR resolves through ISIN `EGS370O1C013`.
+
+### CRST — Creast Mark
+
+**Sep 24 data**
+- Close 3.72, +3.91%.
+- Intraday range 3.59–3.75.
+- Volume about 51.60m.
+- The close finished in the upper ~81% of the day's range.
+- Screenshot average volume: 86.47m, so Sep 24 volume was only about 0.60x that reference average.
+
+**1m structure**
+- Early push 3.61 → 3.67, followed by a fade to the session low around 3.59.
+- Rebuilt toward 3.70 during the morning.
+- 12:12 Cairo: a high-volume probe reached 3.75 but failed to hold; immediate rejection back toward 3.70.
+- 13:00 area sold down toward 3.60, then 13:02 reclaimed 3.66 on heavy volume.
+- 13:14–13:16 produced another strong rejection from the 3.60 area.
+- 14:14 printed a large-volume jump from the low 3.60s to 3.70.
+- Closing auction/last minutes printed very heavy volume at 3.72.
+
+**Depth/tape**
+- Best bid/ask screenshot: 3.71 / 3.73, spread 0.02 (~0.54%).
+- Aggregate visible depth: ~21.6% bid / 78.4% ask.
+- Important visible supply: 3.79, 3.88–3.90, and especially 3.98–4.10.
+- Visible bids exist around 3.70, 3.60, 3.55 and 3.50, but these are intent only.
+- Closing trades at 3.72 included several large green-classified prints; price response next session is still required.
+
+**Map**
+- Immediate pivot: 3.70–3.75.
+- Breakout trigger zone: 3.73/3.75 only if supply is actually absorbed.
+- Upside zones: 3.79–3.80 → 3.88–3.90 → 3.98–4.10.
+- Downside zones: 3.66 → 3.59–3.60 → 3.55 → 3.50.
+- 4.09 is the recent/52-week high area.
+
+**News/disclosures**
+- Sep 21: disclosure concerning a post-execution disclosure form.
+- Sep 16: EGM minutes (before certification).
+- Sep 13: EGM resolutions (second meeting; meeting held Sep 10).
+- Aug 12: EGX Listing Committee imposed EGP 25k + EGP 25k penalties for listing-rule violations.
+- The indexed disclosure pages confirm the events but do not expose enough of the Sep EGM attachment contents to build a catalyst thesis from them.
+
+Sources:
+- https://numbstr.com/market/CRST/disclosures
+- https://www.sigma-cap.com/main/news_page_exact?newsId=46062987&newsType=MIST
+- https://stockanalysis.com/quote/egx/CRST/history/
+
+**Social-media check**
+- Publicly indexed Facebook/X/YouTube searches did not return reliable recent CRST trader discussions.
+- Therefore no social-sentiment label is assigned. Do not substitute unrelated hashtag hits or automated-score sites for actual sentiment evidence.
+
+**Current use**
+- Strong candidate for day trading because the close was strong and the 1m structure gives clear levels.
+- Not automatically a swing entry yet because 3.75 failed once and there is heavy overhead supply toward 3.79–4.10.
+
+### NAPR — National Printing
+
+**Sep 24 data**
+- Close 52.17, +3.31%.
+- Range 50.50–57.80.
+- Volume 2.52m versus screenshot average 375.5k: roughly 6.7x.
+- The close was only around the lower 23% of the day's range despite the positive daily return: a major intraday round-trip.
+
+**1m structure**
+- Opened 53.60 and sold quickly into 50.50.
+- First strong rebound accelerated through 54–55 and reached ~55.85 around 10:20.
+- A second major momentum leg around noon reached 57.80 at 12:30.
+- The 57.80 breakout failed immediately; 12:31 closed near 56 and price later faded materially.
+- Afternoon bounces repeatedly failed to restore the high.
+- Late session traded mostly near 51.3–52.4 and closed at 52.17.
+
+**Depth/tape**
+- Post-close screenshot showed 52.17 best bid versus 55.92 best ask: a 6.7% spread. This is a closed/sparse book and must not be treated as the expected live spread Sunday.
+- Aggregate visible book showed ~66% bids, but that does not offset the large post-close spread or Thursday's failed 57.80 move.
+- Closing trades were concentrated at 52.17 with mixed tick-color classification.
+
+**Map**
+- Main support/decision zone: 50.50–52.00.
+- Mid pivot/supply: 53.5–54.0.
+- First major upside zone: 55.0–56.5.
+- Major breakout level: 57.80.
+- If 50.50 fails and cannot reclaim, next historical reference is roughly 48–49.2.
+
+**Fundamentals/news**
+- H1 2026 consolidated profit attributable to shareholders: about EGP 179.7m, down 11.3% YoY.
+- H1 sales: about EGP 3.358bn vs EGP 3.548bn.
+- Standalone H1 shifted to a small loss.
+- In Jan 2026 the company submitted documents to list a capital increase from EGP 211.71m to EGP 215.34m, issued for the acquisition of shares in Al Shorouk Modern Printing & Packaging.
+- No recent company disclosure found in the indexed search clearly explains the Sep 13–24 price explosion.
+
+Sources:
+- https://www.arabfinance.com/en/news/newdetails/National-Printing-consolidated-profits-in-h1-2026
+- https://www.3way-finance.com/etrade/News/NewsDetails.aspx?NewsID=2118231
+- https://stockanalysis.com/quote/egx/NAPR/history/
+
+**Social-media check**
+- Publicly indexed Facebook/X/YouTube searches returned no reliable recent NAPR trader discussions.
+- So social sentiment is unverified. The extreme jump in volume proves attention/liquidity, but volume is not the same thing as social-media sentiment.
+
+**Current use**
+- Day-trade candidate first, not a clean swing candidate at this point.
+- Reason: huge volatility and attention, but the Sep 24 57.80 breakout failed and the stock closed far below its intraday high.
+- Any long setup should require a fresh price/tape trigger rather than assuming the recent +70% run must continue.
+
