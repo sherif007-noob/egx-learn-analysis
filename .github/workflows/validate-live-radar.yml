@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/cloudflare-live-radar
+      - feature/regime-shift-detector
     paths:
       - 'worker/**'
       - 'wrangler.jsonc'
@@ -33,6 +34,9 @@ jobs:
           --moduleResolution Bundler
           --lib ES2022,DOM
           worker/src/*.ts
+
+      - name: Regime regression check
+        run: npm run radar:regime-check
 
       - name: Cloudflare dry build
         run: npx wrangler deploy --dry-run --outdir dist/live-radar
