@@ -60,6 +60,30 @@ export async function deriveTelegramWebhookSecret(adminToken: string): Promise<s
     .join('');
 }
 
+export async function telegramBotStatus(env: RadarEnv): Promise<any> {
+  const [me, webhook] = await Promise.all([
+    telegramApi(env, 'getMe', {}),
+    telegramApi(env, 'getWebhookInfo', {}),
+  ]);
+
+  return {
+    bot: {
+      id: me?.id,
+      username: me?.username,
+      firstName: me?.first_name,
+    },
+    webhook: {
+      url: webhook?.url || '',
+      hasCustomCertificate: Boolean(webhook?.has_custom_certificate),
+      pendingUpdateCount: Number(webhook?.pending_update_count || 0),
+      lastErrorDate: webhook?.last_error_date || null,
+      lastErrorMessage: webhook?.last_error_message || null,
+      maxConnections: webhook?.max_connections || null,
+      allowedUpdates: webhook?.allowed_updates || [],
+    },
+  };
+}
+
 export async function configureTelegramBot(
   env: RadarEnv,
   origin: string,
@@ -89,6 +113,12 @@ export async function configureTelegramBot(
       { command: 'help', description: 'Show available commands' },
     ],
   });
+
+  await sendTelegramMessage(
+    env,
+    String(env.TELEGRAM_CHAT_ID),
+    '✅ <b>EGX Live Radar connected</b>\nTelegram webhook is active. Try /scan now.',
+  );
 
   return { webhookUrl, commands };
 }
