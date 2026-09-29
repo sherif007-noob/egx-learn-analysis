@@ -221,4 +221,9 @@ export type RadarEnv = {
   ADMIN_TOKEN?: string;
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
+  RAPIDAPI_ENABLED?: string;
+  RAPIDAPI_KEY?: string;
+  RAPIDAPI_HOST?: string;
+  RAPIDAPI_BASE_URL?: string;
+  RAPIDAPI_TIMEOUT_MS?: string;
 };
