@@ -128,6 +128,11 @@ const tycnSelf = firstDateAtLeast(tycnPhases, 'SELF_REINFORCING');
 assert.ok(biocAccelerating && biocAccelerating <= '2026-07-15', `BIOC acceleration detected too late: ${biocAccelerating}`);
 assert.ok(biocSelf && biocSelf <= '2026-07-19', `BIOC self-reinforcing detected too late: ${biocSelf}`);
 assert.ok(tycnAbnormal && tycnAbnormal <= '2026-06-07', `TYCN abnormal regime detected too late: ${tycnAbnormal}`);
+assert.notEqual(
+  tycnPhases.find((item) => item.date === '2026-06-08')?.phase,
+  'NORMAL',
+  'TYCN should remain in an abnormal regime during the post-ignition consolidation on 2026-06-08',
+);
 assert.ok(tycnAccelerating && tycnAccelerating <= '2026-06-09', `TYCN acceleration detected too late: ${tycnAccelerating}`);
 assert.ok(tycnSelf && tycnSelf <= '2026-06-15', `TYCN self-reinforcing detected too late: ${tycnSelf}`);
 
