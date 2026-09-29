@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "egx-live-radar",
+  "main": "worker/src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "RADAR_ENABLED": "true",
+    "CAIRO_TZ": "Africa/Cairo",
+    "SESSION_START": "10:00",
+    "SESSION_END": "14:30",
+    "POLL_SECONDS": "20",
+    "MIN_SCORE": "70",
+    "TRIGGER_SCORE": "83",
+    "ALERT_COOLDOWN_MINUTES": "8",
+    "MAX_CANDIDATES": "15",
+    "MIN_DAILY_TURNOVER_EGP": "8000000",
+    "MIN_MINUTE_TURNOVER_EGP": "120000",
+    "MIN_VOLUME_SHARES": "100000"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "RADAR_COORDINATOR",
+        "class_name": "RadarCoordinator"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["RadarCoordinator"]
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "* 6-13 * * SUN-THU"
+    ]
+  }
+}
