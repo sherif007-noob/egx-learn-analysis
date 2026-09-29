@@ -36,11 +36,22 @@ async function request(
     throw new Error('Supabase is not configured');
   }
 
+  const key = env.SUPABASE_SERVICE_ROLE_KEY!.trim();
+  const authHeaders: Record<string, string> = {
+    apikey: key,
+  };
+
+  // New Supabase sb_secret_* keys are opaque API keys, not JWTs.
+  // Sending them as Authorization: Bearer causes PostgREST to reject them
+  // as an invalid JWT. Legacy service_role JWTs still need Authorization.
+  if (!key.startsWith('sb_secret_')) {
+    authHeaders.authorization = `Bearer ${key}`;
+  }
+
   const response = await fetch(`${env.SUPABASE_URL}/rest/v1/${path}`, {
     ...init,
     headers: {
-      apikey: env.SUPABASE_SERVICE_ROLE_KEY!,
-      authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      ...authHeaders,
       ...(init.headers || {}),
     },
   });
