@@ -173,6 +173,7 @@ export type RadarState = {
   alerts: Record<string, AlertState>;
   pendingEvaluations: PendingAlertEvaluation[];
   latestSignals: LiveSignal[];
+  watchlist: string[];
   market: MarketContext;
   lastUniverseCount: number;
 };
