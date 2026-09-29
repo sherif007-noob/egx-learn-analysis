@@ -1,4 +1,4 @@
-import type { LiveSignal, RadarEnv } from './types';
+import type { LiveSignal, RadarEnv, RadarState } from './types';
 
 function money(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}m`;
@@ -17,6 +17,154 @@ function stageEmoji(stage: LiveSignal['stage']): string {
   if (stage === 'BREAKOUT') return '🚨';
   if (stage === 'TRIGGERING') return '⚡';
   return '👀';
+}
+
+async function telegramApi(
+  env: RadarEnv,
+  method: string,
+  body: Record<string, unknown>,
+): Promise<any> {
+  if (!env.TELEGRAM_BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN is not configured');
+
+  const response = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const payload = await response.json().catch(() => null) as any;
+  if (!response.ok || !payload?.ok) {
+    throw new Error(`Telegram ${method} failed: ${response.status} ${JSON.stringify(payload)}`);
+  }
+  return payload.result;
+}
+
+export async function sendTelegramMessage(
+  env: RadarEnv,
+  chatId: string,
+  text: string,
+): Promise<void> {
+  await telegramApi(env, 'sendMessage', {
+    chat_id: chatId,
+    text,
+    parse_mode: 'HTML',
+    disable_web_page_preview: true,
+  });
+}
+
+export async function deriveTelegramWebhookSecret(adminToken: string): Promise<string> {
+  const bytes = new TextEncoder().encode(adminToken);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export async function configureTelegramBot(
+  env: RadarEnv,
+  origin: string,
+): Promise<{ webhookUrl: string; commands: string[] }> {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+    throw new Error('Telegram token/chat ID are not configured');
+  }
+  if (!env.ADMIN_TOKEN) {
+    throw new Error('ADMIN_TOKEN is required to secure the Telegram webhook');
+  }
+
+  const webhookUrl = `${origin.replace(/\/$/, '')}/telegram/webhook`;
+  const secretToken = await deriveTelegramWebhookSecret(env.ADMIN_TOKEN);
+
+  await telegramApi(env, 'setWebhook', {
+    url: webhookUrl,
+    secret_token: secretToken,
+    allowed_updates: ['message'],
+    drop_pending_updates: false,
+  });
+
+  const commands = ['scan', 'status', 'help'];
+  await telegramApi(env, 'setMyCommands', {
+    commands: [
+      { command: 'scan', description: 'Run a live EGX scan now' },
+      { command: 'status', description: 'Show latest radar state' },
+      { command: 'help', description: 'Show available commands' },
+    ],
+  });
+
+  return { webhookUrl, commands };
+}
+
+export function formatManualScanResult(result: any): string {
+  if (result?.error) {
+    return `❌ <b>Scan failed</b>\n${escapeHtml(String(result.error))}`;
+  }
+
+  if (result?.skipped) {
+    return `⚠️ <b>Scan skipped</b>\n${escapeHtml(String(result.reason || 'unknown reason'))}`;
+  }
+
+  const market = result?.market || {};
+  const signals = Array.isArray(result?.signals) ? result.signals as LiveSignal[] : [];
+  const header = [
+    '📡 <b>EGX Live Scan</b>',
+    result?.atCairo ? `🕒 ${escapeHtml(String(result.atCairo))}` : '',
+    `Universe: <b>${Number(result?.universeCount || 0).toLocaleString('en-US')}</b> · Signals: <b>${signals.length}</b>`,
+    `Market: <b>${escapeHtml(String(market.regime || 'UNKNOWN'))}</b> · Adv ${Number(market.advancers || 0)} / Dec ${Number(market.decliners || 0)}`,
+  ].filter(Boolean);
+
+  if (!signals.length) {
+    return [
+      ...header,
+      '',
+      'مفيش سهم عدى شروط الـradar الحالية في الـscan ده.',
+      Number(result?.universeCount || 0) > 0
+        ? 'لو دي أول scan بعد التشغيل، ابعت /scan تاني بعد حوالي 20 ثانية عشان يبقى عندنا interval delta.'
+        : '',
+    ].filter(Boolean).join('\n');
+  }
+
+  const rows = signals.slice(0, 7).map((signal, index) => {
+    const reasons = signal.reasons?.slice(0, 3).join(' · ') || 'live momentum setup';
+    return [
+      `${index + 1}. ${stageEmoji(signal.stage)} <b>${escapeHtml(signal.ticker)}</b> · ${signal.stage} · <b>${signal.score.toFixed(1)}</b>`,
+      `   ${signal.close.toFixed(3)} · Day ${signal.changePct >= 0 ? '+' : ''}${signal.changePct.toFixed(2)}% · 1m ${signal.velocity1mPct >= 0 ? '+' : ''}${signal.velocity1mPct.toFixed(2)}%`,
+      `   Pace ${signal.volumePace.toFixed(1)}x · HOD gap ${signal.hodDistancePct.toFixed(2)}% · RS ${signal.relativeStrengthPct >= 0 ? '+' : ''}${signal.relativeStrengthPct.toFixed(2)}pp`,
+      `   <i>${escapeHtml(reasons)}</i>`,
+    ].join('\n');
+  });
+
+  return [
+    ...header,
+    '',
+    ...rows,
+    '',
+    'دي shortlist متابعة، مش أمر شراء. افتح Depth + Trades قبل أي تنفيذ.',
+  ].join('\n');
+}
+
+export function formatRadarStatus(state: RadarState): string {
+  const signals = state.latestSignals || [];
+  return [
+    '🛰 <b>EGX Radar Status</b>',
+    `Updated: <b>${escapeHtml(state.updatedAt || '-')}</b>`,
+    `Session: ${escapeHtml(state.sessionDate || '-')} · Universe: <b>${state.lastUniverseCount || 0}</b>`,
+    `Market: <b>${escapeHtml(state.market?.regime || 'UNKNOWN')}</b> · breadth ${((state.market?.breadthRatio ?? 0.5) * 100).toFixed(0)}%`,
+    `Current signals: <b>${signals.length}</b> · Pending calibration: <b>${state.pendingEvaluations?.length || 0}</b>`,
+    signals[0]
+      ? `Top: ${stageEmoji(signals[0].stage)} <b>${escapeHtml(signals[0].ticker)}</b> · ${signals[0].stage} · score ${signals[0].score.toFixed(1)}`
+      : 'Top: no active signal',
+  ].join('\n');
+}
+
+export function telegramHelpText(): string {
+  return [
+    '🤖 <b>EGX Live Radar</b>',
+    '',
+    '/scan — اعمل live scan دلوقتي وورّيني أعلى candidates',
+    '/status — آخر حالة للـradar',
+    '/help — الأوامر المتاحة',
+    '',
+    'الـalerts التلقائية هتفضل توصلك لوحدها وقت الجلسة.',
+  ].join('\n');
 }
 
 export async function sendTelegramAlerts(env: RadarEnv, signals: LiveSignal[]): Promise<void> {
@@ -39,18 +187,5 @@ export async function sendTelegramAlerts(env: RadarEnv, signals: LiveSignal[]): 
     })
     .join('\n\n');
 
-  const response = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: env.TELEGRAM_CHAT_ID,
-      text: body,
-      parse_mode: 'HTML',
-      disable_web_page_preview: true,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Telegram send failed: ${response.status} ${await response.text()}`);
-  }
+  await sendTelegramMessage(env, env.TELEGRAM_CHAT_ID, body);
 }
