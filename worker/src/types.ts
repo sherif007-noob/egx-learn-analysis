@@ -24,11 +24,36 @@ export type MinimalSnapshot = {
   closeLocation: number;
 };
 
+export type HistoryPoint = MinimalSnapshot & {
+  at: number;
+};
+
+export type MarketRegime = 'RISK_ON' | 'MIXED' | 'RISK_OFF';
+
+export type MarketContext = {
+  advancers: number;
+  decliners: number;
+  unchanged: number;
+  breadthRatio: number;
+  medianChangePct: number;
+  regime: MarketRegime;
+};
+
+export type DeepMetrics = {
+  velocity1mPct: number;
+  velocity3mPct: number;
+  relativeStrengthPct: number;
+  positiveIntervals5: number;
+  higherLow: boolean;
+  compressionPct: number;
+};
+
 export type SignalStage = 'WATCH' | 'TRIGGERING' | 'BREAKOUT';
 
 export type LiveSignal = {
   ticker: string;
   name: string;
+  sector: string;
   stage: SignalStage;
   score: number;
   close: number;
@@ -42,6 +67,15 @@ export type LiveSignal = {
   closeLocation: number;
   hodDistancePct: number;
   newHod: boolean;
+  velocity1mPct: number;
+  velocity3mPct: number;
+  relativeStrengthPct: number;
+  positiveIntervals5: number;
+  higherLow: boolean;
+  compressionPct: number;
+  marketBreadthRatio: number;
+  marketMedianChangePct: number;
+  marketRegime: MarketRegime;
   reasons: string[];
 };
 
@@ -56,8 +90,10 @@ export type RadarState = {
   sessionDate: string;
   lastRunAt: number;
   previous: Record<string, MinimalSnapshot>;
+  history: Record<string, HistoryPoint[]>;
   alerts: Record<string, AlertState>;
   latestSignals: LiveSignal[];
+  market: MarketContext;
   lastUniverseCount: number;
 };
 
@@ -74,6 +110,7 @@ export type RadarConfig = {
   minDailyTurnover: number;
   minMinuteTurnover: number;
   minVolumeShares: number;
+  historyMinutes: number;
 };
 
 export type DurableStubLike = {
@@ -98,7 +135,10 @@ export type RadarEnv = {
   MIN_DAILY_TURNOVER_EGP?: string;
   MIN_MINUTE_TURNOVER_EGP?: string;
   MIN_VOLUME_SHARES?: string;
+  HISTORY_MINUTES?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
   ADMIN_TOKEN?: string;
+  SUPABASE_URL?: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
 };
