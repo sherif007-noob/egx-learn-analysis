@@ -88,8 +88,11 @@ function authHost(env: RadarEnv): string {
   const explicit = cleanHost(env.RAPIDAPI_HOST);
   if (explicit) return explicit;
 
+  const configuredBaseUrl = String(env.RAPIDAPI_BASE_URL || '').trim();
+  if (!configuredBaseUrl) return '';
+
   try {
-    return new URL(baseUrl(env)).host;
+    return new URL(configuredBaseUrl).host;
   } catch {
     return '';
   }
@@ -303,8 +306,8 @@ export async function fetchRapidSummary(
   env: RadarEnv,
   threshold?: number,
 ): Promise<RapidEgxSummary> {
-  const normalizedThreshold = Number.isFinite(threshold)
-    ? Math.max(0, Math.min(20, Number(threshold)))
+  const normalizedThreshold = typeof threshold === 'number' && Number.isFinite(threshold)
+    ? Math.max(0, Math.min(20, threshold))
     : null;
   const endpoint = normalizedThreshold === null
     ? '/api/summary'
