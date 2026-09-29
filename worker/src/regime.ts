@@ -127,6 +127,13 @@ export function computeRegimeMetrics(
     ? Math.max(...prior.slice(-10).map((item) => item.high))
     : null;
   const fresh10dHigh = priorHigh10 !== null && high > priorHigh10 * 1.001;
+  const previousSession = prior.at(-1) || null;
+  const holdingAfterIgnition = Boolean(
+    previousSession
+    && previousSession.changePct >= STRONG_DAY_PCT
+    && dailyChange > -5
+    && close >= previousSession.close * 0.92
+  );
 
   let score = 0;
 
@@ -151,6 +158,7 @@ export function computeRegimeMetrics(
   score += Math.max(0, Math.min(consecutiveLimitUpLikeDays - 1, 2)) * 4;
 
   if (fresh10dHigh) score += 6;
+  if (holdingAfterIgnition) score += 28;
 
   // A sharp red session can happen inside a mania regime, so this is a brake,
   // not a reset. That lets the radar remember a BIOC-style violent pullback.
@@ -180,7 +188,8 @@ export function computeRegimeMetrics(
     dailyChange >= 5
     || rvol10 >= 2
     || (return5dPct !== null && return5dPct >= 12)
-    || fresh10dHigh;
+    || fresh10dHigh
+    || holdingAfterIgnition;
 
   let phase: RegimePhase = 'NORMAL';
   if (score >= 84 && selfReinforcingEvidence) phase = 'SELF_REINFORCING';
@@ -207,6 +216,7 @@ export function computeRegimeMetrics(
     reasons.push(`${priceMultiple10d.toFixed(2)}x from 10-session low`);
   }
   if (fresh10dHigh) reasons.push('fresh 10-session high');
+  if (holdingAfterIgnition) reasons.push('holding after ignition day');
 
   return {
     phase,
