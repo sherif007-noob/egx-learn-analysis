@@ -255,10 +255,12 @@ export async function configureTelegramBot(
     drop_pending_updates: true,
   });
 
-  const commands = ['scan', 'status', 'help'];
+  const commands = ['live', 'regime', 'scan', 'status', 'help'];
   await telegramApi(env, 'setMyCommands', {
     commands: [
-      { command: 'scan', description: 'Run a live EGX scan now' },
+      { command: 'live', description: 'Intraday momentum scan (20s / session)' },
+      { command: 'regime', description: 'Cross-session BIOC/TYCN-style regime scan' },
+      { command: 'scan', description: 'Combined overview of all scan lanes' },
       { command: 'status', description: 'Show latest radar state' },
       { command: 'help', description: 'Show available commands' },
     ],
@@ -267,13 +269,22 @@ export async function configureTelegramBot(
   await sendTelegramMessage(
     env,
     String(env.TELEGRAM_CHAT_ID).trim(),
-    '✅ <b>EGX Live Radar connected</b>\nTelegram webhook is active. Try /scan now.',
+    '✅ <b>EGX Live Radar connected</b>\nUse /live for intraday momentum, /regime for cross-session anomalies, or /scan for the combined overview.',
   );
 
   return { webhookUrl, commands };
 }
 
-export function formatManualScanResult(result: any): string {
+function formatScanResult(
+  result: any,
+  options: {
+    title: string;
+    signals: LiveSignal[];
+    emptyMessage: string;
+    showLeaders?: boolean;
+    footer: string;
+  },
+): string {
   if (result?.error) {
     return `❌ <b>Scan failed</b>\n${escapeHtml(String(result.error))}`;
   }
@@ -283,16 +294,19 @@ export function formatManualScanResult(result: any): string {
   }
 
   const market = result?.market || {};
-  const signals = Array.isArray(result?.signals) ? result.signals as LiveSignal[] : [];
+  const signals = options.signals;
   const header = [
-    '📡 <b>EGX Live Scan</b>',
+    options.title,
     result?.atCairo ? `🕒 ${escapeHtml(String(result.atCairo))}` : '',
     `Universe: <b>${Number(result?.universeCount || 0).toLocaleString('en-US')}</b> · Signals: <b>${signals.length}</b>`,
     `Market: <b>${escapeHtml(String(market.regime || 'UNKNOWN'))}</b> · Adv ${Number(market.advancers || 0)} / Dec ${Number(market.decliners || 0)}`,
   ].filter(Boolean);
 
   if (!signals.length) {
-    const leaders = Array.isArray(result?.leaders) ? result.leaders.slice(0, 7) : [];
+    const leaders = options.showLeaders && Array.isArray(result?.leaders)
+      ? result.leaders.slice(0, 7)
+      : [];
+
     const leaderRows = leaders.map((leader: any, index: number) => [
       `${index + 1}. <b>${escapeHtml(String(leader.ticker || '-'))}</b> · ${Number(leader.close || 0).toFixed(3)} · Day ${Number(leader.changePct || 0) >= 0 ? '+' : ''}${Number(leader.changePct || 0).toFixed(2)}%`,
       `   RVOL ${Number(leader.rvol10 || 0).toFixed(2)}x · HOD gap ${Number(leader.hodDistancePct || 0).toFixed(2)}% · RS ${Number(leader.relativeStrengthPct || 0) >= 0 ? '+' : ''}${Number(leader.relativeStrengthPct || 0).toFixed(2)}pp`,
@@ -302,20 +316,24 @@ export function formatManualScanResult(result: any): string {
     return [
       ...header,
       '',
-      'مفيش سهم عدى شروط الـWATCH/TRIGGERING/BREAKOUT الرسمية في الـscan ده.',
-      leaders.length ? 'لكن دي أقوى <b>liquid movers</b> الحالية:' : '',
-      ...leaderRows,
+      options.emptyMessage,
+      ...(leaders.length ? ['', '<b>أقوى liquid movers الحالية:</b>', ...leaderRows] : []),
       '',
-      'الـliquid movers دي للمراقبة بس ومش محسوبة Signals رسمية.',
+      options.footer,
     ].filter(Boolean).join('\n');
   }
 
-  const rows = signals.slice(0, 7).map((signal, index) => {
-    const reasons = signal.reasons?.slice(0, 3).join(' · ') || 'live momentum setup';
+  const rows = signals.slice(0, 10).map((signal, index) => {
+    const reasons = signal.reasons?.slice(0, 3).join(' · ') || 'momentum setup';
+    const lane = signal.detectionLane || 'LIVE';
+    const regime = signal.regimePhase && signal.regimePhase !== 'NORMAL'
+      ? ` · 🧭 ${signal.regimePhase} ${(signal.regimeScore ?? 0).toFixed(0)}`
+      : '';
+
     return [
-      `${index + 1}. ${stageEmoji(signal.stage)} <b>${escapeHtml(signal.ticker)}</b> · ${signal.stage} · <b>${signal.score.toFixed(1)}</b>`,
+      `${index + 1}. ${stageEmoji(signal.stage)} <b>${escapeHtml(signal.ticker)}</b> · ${signal.stage} · <b>${signal.score.toFixed(1)}</b> · ${lane}${regime}`,
       `   ${signal.close.toFixed(3)} · Day ${signal.changePct >= 0 ? '+' : ''}${signal.changePct.toFixed(2)}% · 1m ${signal.velocity1mPct >= 0 ? '+' : ''}${signal.velocity1mPct.toFixed(2)}%`,
-      `   Pace ${signal.volumePace.toFixed(1)}x · HOD gap ${signal.hodDistancePct.toFixed(2)}% · RS ${signal.relativeStrengthPct >= 0 ? '+' : ''}${signal.relativeStrengthPct.toFixed(2)}pp`,
+      `   RVOL ${signal.rvol10.toFixed(2)}x · HOD gap ${signal.hodDistancePct.toFixed(2)}% · RS ${signal.relativeStrengthPct >= 0 ? '+' : ''}${signal.relativeStrengthPct.toFixed(2)}pp`,
       `   <i>${escapeHtml(reasons)}</i>`,
     ].join('\n');
   });
@@ -325,8 +343,59 @@ export function formatManualScanResult(result: any): string {
     '',
     ...rows,
     '',
-    'دي shortlist متابعة، مش أمر شراء. افتح Depth + Trades قبل أي تنفيذ.',
+    options.footer,
   ].join('\n');
+}
+
+export function formatManualScanResult(result: any): string {
+  const signals = Array.isArray(result?.signals) ? result.signals as LiveSignal[] : [];
+  return formatScanResult(result, {
+    title: '📡 <b>EGX Combined Scan</b>',
+    signals,
+    emptyMessage: 'مفيش signals رسمية في أي lane في الـscan ده.',
+    showLeaders: true,
+    footer: 'ده overview لكل طرق الـscan. استخدم /live أو /regime لو عايز lane محددة.',
+  });
+}
+
+export function formatLiveScanResult(result: any): string {
+  const all = Array.isArray(result?.signals) ? result.signals as LiveSignal[] : [];
+  const signals = all.filter((signal) => signal.detectionLane !== 'REGIME');
+
+  return formatScanResult(result, {
+    title: '⚡ <b>Intraday Momentum Scan</b>',
+    signals,
+    emptyMessage: 'مفيش WATCH/TRIGGERING/BREAKOUT من الـintraday lanes دلوقتي.',
+    showLeaders: true,
+    footer: 'ده scan للحركة الحالية: 20s momentum + session leaders. مش بيعرض regime-only candidates.',
+  });
+}
+
+export function formatRegimeScanResult(result: any): string {
+  const all = Array.isArray(result?.signals) ? result.signals as LiveSignal[] : [];
+  const regimeRank: Record<string, number> = {
+    SELF_REINFORCING: 3,
+    ACCELERATING: 2,
+    ABNORMAL: 1,
+    NORMAL: 0,
+  };
+
+  const signals = all
+    .filter((signal) => signal.regimePhase && signal.regimePhase !== 'NORMAL')
+    .sort((a, b) => {
+      const phaseDiff = (regimeRank[b.regimePhase || 'NORMAL'] || 0)
+        - (regimeRank[a.regimePhase || 'NORMAL'] || 0);
+      if (phaseDiff !== 0) return phaseDiff;
+      return (b.regimeScore ?? 0) - (a.regimeScore ?? 0);
+    });
+
+  return formatScanResult(result, {
+    title: '🧭 <b>Momentum Regime Scan</b>',
+    signals,
+    emptyMessage: 'مفيش سهم دخل ABNORMAL / ACCELERATING / SELF_REINFORCING في الذاكرة الحالية.',
+    showLeaders: false,
+    footer: 'ده cross-session detector بتاع BIOC/TYCN-style behavior، مش إشارة دخول لحظية.',
+  });
 }
 
 export function formatRadarStatus(state: RadarState): string {
@@ -345,13 +414,17 @@ export function formatRadarStatus(state: RadarState): string {
 
 export function telegramHelpText(): string {
   return [
-    '🤖 <b>EGX Live Radar</b>',
+    '🤖 <b>EGX Radar Commands</b>',
     '',
-    '/scan — اعمل live scan دلوقتي وورّيني أعلى candidates',
-    '/status — آخر حالة للـradar',
-    '/help — الأوامر المتاحة',
+    '⚡ /live — Intraday momentum: 20s velocity + volume + session leaders',
+    '🧭 /regime — Multi-session regime detector: BIOC/TYCN-style abnormal momentum',
+    '📡 /scan — Combined overview لكل الـscan lanes',
+    '🛰 /status — آخر حالة وstate للـradar',
+    '❓ /help — شرح الأوامر',
     '',
-    'الـalerts التلقائية هتفضل توصلك لوحدها وقت الجلسة.',
+    '<b>قاعدة التنظيم:</b> كل scanning strategy جديدة هتاخد command مستقل، و/scan يفضل overview جامع بس.',
+    '',
+    'الـalerts التلقائية بتفضل شغالة أثناء الجلسة بشكل مستقل عن الـmanual commands.',
   ].join('\n');
 }
 
