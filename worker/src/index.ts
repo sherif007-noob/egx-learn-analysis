@@ -5,6 +5,7 @@ import {
   formatManualScanResult,
   formatRadarStatus,
   sendTelegramMessage,
+  telegramBotStatus,
   telegramHelpText,
 } from './telegram';
 import type { RadarEnv, RadarState } from './types';
@@ -121,6 +122,15 @@ export default {
       try {
         const result = await configureTelegramBot(env, url.origin);
         return json({ ok: true, ...result });
+      } catch (error) {
+        return json({ error: error instanceof Error ? error.message : String(error) }, 502);
+      }
+    }
+
+    if (url.pathname === '/api/telegram/status' && request.method === 'GET') {
+      try {
+        const status = await telegramBotStatus(env);
+        return json({ ok: true, ...status });
       } catch (error) {
         return json({ error: error instanceof Error ? error.message : String(error) }, 502);
       }
