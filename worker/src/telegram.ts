@@ -143,13 +143,21 @@ export function formatManualScanResult(result: any): string {
   ].filter(Boolean);
 
   if (!signals.length) {
+    const leaders = Array.isArray(result?.leaders) ? result.leaders.slice(0, 7) : [];
+    const leaderRows = leaders.map((leader: any, index: number) => [
+      `${index + 1}. <b>${escapeHtml(String(leader.ticker || '-'))}</b> · ${Number(leader.close || 0).toFixed(3)} · Day ${Number(leader.changePct || 0) >= 0 ? '+' : ''}${Number(leader.changePct || 0).toFixed(2)}%`,
+      `   RVOL ${Number(leader.rvol10 || 0).toFixed(2)}x · HOD gap ${Number(leader.hodDistancePct || 0).toFixed(2)}% · RS ${Number(leader.relativeStrengthPct || 0) >= 0 ? '+' : ''}${Number(leader.relativeStrengthPct || 0).toFixed(2)}pp`,
+      `   Turnover EGP ${money(Number(leader.turnover || 0))}`,
+    ].join('\n'));
+
     return [
       ...header,
       '',
-      'مفيش سهم عدى شروط الـradar الحالية في الـscan ده.',
-      Number(result?.universeCount || 0) > 0
-        ? 'لو دي أول scan بعد التشغيل، ابعت /scan تاني بعد حوالي 20 ثانية عشان يبقى عندنا interval delta.'
-        : '',
+      'مفيش سهم عدى شروط الـWATCH/TRIGGERING/BREAKOUT الرسمية في الـscan ده.',
+      leaders.length ? 'لكن دي أقوى <b>liquid movers</b> الحالية:' : '',
+      ...leaderRows,
+      '',
+      'الـliquid movers دي للمراقبة بس ومش محسوبة Signals رسمية.',
     ].filter(Boolean).join('\n');
   }
 
