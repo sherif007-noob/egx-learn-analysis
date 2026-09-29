@@ -1,5 +1,6 @@
 import { fetchEgyptScanner } from './scanner';
-import { buildSessionWatch, buildSignal, toSnapshot } from './signal';
+import { buildRegimeWatch, buildSessionWatch, buildSignal, toSnapshot } from './signal';
+import { attachRegime, computeRegimeMetrics, updateRegimeHistory } from './regime';
 import {
   persistAlertEvents,
   persistAlertOutcomes,
@@ -19,17 +20,25 @@ import type {
   RadarConfig,
   RadarEnv,
   RadarState,
+  RegimePhase,
   ScannerRow,
   SignalStage,
 } from './types';
 
-const STATE_KEY = 'radar-state-v3';
+const STATE_KEY = 'radar-state-v4';
 const OUTCOME_HORIZONS = [5, 10, 20, 30] as const;
 
 const STAGE_RANK: Record<SignalStage, number> = {
   WATCH: 1,
   TRIGGERING: 2,
   BREAKOUT: 3,
+};
+
+const REGIME_RANK: Record<RegimePhase, number> = {
+  NORMAL: 0,
+  ABNORMAL: 1,
+  ACCELERATING: 2,
+  SELF_REINFORCING: 3,
 };
 
 function num(value: string | undefined, fallback: number): number {
@@ -132,6 +141,7 @@ function emptyState(sessionDate = ''): RadarState {
     lastRunAt: 0,
     previous: {},
     history: {},
+    regimeHistory: {},
     alerts: {},
     pendingEvaluations: [],
     latestSignals: [],
@@ -293,6 +303,11 @@ function shouldAlert(
 ): boolean {
   if (!existing) return true;
   if (STAGE_RANK[signal.stage] > STAGE_RANK[existing.stage]) return true;
+
+  const currentRegime = signal.regimePhase || 'NORMAL';
+  const previousRegime = existing.regimePhase || 'NORMAL';
+  if (REGIME_RANK[currentRegime] > REGIME_RANK[previousRegime]) return true;
+
   return now - existing.lastAt >= cooldownMs && signal.score >= existing.lastScore + 4;
 }
 
@@ -405,7 +420,20 @@ export class RadarCoordinator {
   }
 
   private async readState(): Promise<RadarState> {
-    return (await this.ctx.storage.get(STATE_KEY)) || emptyState();
+    const stored = await this.ctx.storage.get(STATE_KEY) as RadarState | undefined;
+    if (!stored) return emptyState();
+
+    return {
+      ...emptyState(stored.sessionDate || ''),
+      ...stored,
+      previous: stored.previous || {},
+      history: stored.history || {},
+      regimeHistory: stored.regimeHistory || {},
+      alerts: stored.alerts || {},
+      pendingEvaluations: stored.pendingEvaluations || [],
+      latestSignals: stored.latestSignals || [],
+      market: stored.market || emptyMarket(),
+    };
   }
 
   private async writeState(state: RadarState): Promise<void> {
@@ -431,7 +459,11 @@ export class RadarCoordinator {
     const clock = cairoParts(now, cfg.timeZone);
 
     if (state.sessionDate !== clock.date) {
-      state = emptyState(clock.date);
+      const regimeHistory = state.regimeHistory || {};
+      state = {
+        ...emptyState(clock.date),
+        regimeHistory,
+      };
     }
 
     const sinceLastMs = state.lastRunAt > 0 ? now - state.lastRunAt : Number.POSITIVE_INFINITY;
@@ -455,6 +487,7 @@ export class RadarCoordinator {
 
     const nextPrevious: RadarState['previous'] = {};
     const nextHistory: RadarState['history'] = {};
+    const nextRegimeHistory: RadarState['regimeHistory'] = { ...(state.regimeHistory || {}) };
     const signals: LiveSignal[] = [];
 
     for (const row of rows) {
@@ -468,6 +501,17 @@ export class RadarCoordinator {
 
       const previous = state.previous[row.ticker];
       const deep = computeDeepMetrics(oldHistory, currentPoint, market);
+      const regime = computeRegimeMetrics(
+        state.regimeHistory[row.ticker] || [],
+        clock.date,
+        row,
+        market,
+      );
+      nextRegimeHistory[row.ticker] = updateRegimeHistory(
+        state.regimeHistory[row.ticker] || [],
+        clock.date,
+        row,
+      );
 
       let signal: LiveSignal | null = null;
 
@@ -494,7 +538,15 @@ export class RadarCoordinator {
         });
       }
 
-      if (signal) signals.push(signal);
+      if (!signal) {
+        signal = buildRegimeWatch(row, deep, market, regime, {
+          intervalSeconds,
+          minDailyTurnover: cfg.minDailyTurnover,
+          minVolumeShares: cfg.minVolumeShares,
+        });
+      }
+
+      if (signal) signals.push(attachRegime(signal, regime));
     }
 
     signals.sort((a, b) => b.score - a.score);
@@ -511,6 +563,7 @@ export class RadarCoordinator {
         stage: signal.stage,
         lastAt: now,
         lastScore: signal.score,
+        regimePhase: signal.regimePhase,
       };
     }
 
@@ -589,6 +642,7 @@ export class RadarCoordinator {
       lastRunAt: now,
       previous: nextPrevious,
       history: nextHistory,
+      regimeHistory: nextRegimeHistory,
       alerts: nextAlerts,
       pendingEvaluations: [...retainedExistingPending, ...newPending],
       latestSignals,
