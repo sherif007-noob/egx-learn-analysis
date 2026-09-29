@@ -5,11 +5,17 @@
   "type": "module",
   "scripts": {
     "fetch:intraday": "tsx scripts/fetchIntraday.ts",
-    "scan:market": "tsx scripts/scanMarket.ts"
+    "scan:market": "tsx scripts/scanMarket.ts",
+    "radar:dev": "wrangler dev --test-scheduled",
+    "radar:deploy": "wrangler deploy",
+    "radar:tail": "wrangler tail"
   },
   "dependencies": {
     "@ch99q/twc": "^0.1.4",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }
