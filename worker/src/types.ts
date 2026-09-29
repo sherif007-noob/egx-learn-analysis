@@ -50,6 +50,52 @@ export type DeepMetrics = {
 
 export type SignalStage = 'WATCH' | 'TRIGGERING' | 'BREAKOUT';
 
+export type RegimePhase = 'NORMAL' | 'ABNORMAL' | 'ACCELERATING' | 'SELF_REINFORCING';
+export type RegimeConfidence = 'BOOTSTRAP' | 'PARTIAL' | 'MATURE';
+
+export type RegimeDailyPoint = {
+  date: string;
+  close: number;
+  high: number;
+  low: number;
+  volume: number;
+  changePct: number;
+  rvol10: number;
+};
+
+export type RegimeMetrics = {
+  phase: RegimePhase;
+  score: number;
+  confidence: RegimeConfidence;
+  priorSessions: number;
+  return3dPct: number | null;
+  return5dPct: number | null;
+  return10dPct: number | null;
+  priceMultiple10d: number | null;
+  explosiveDays5: number;
+  limitUpLikeDays5: number;
+  strongDays10: number;
+  consecutiveStrongDays: number;
+  consecutiveLimitUpLikeDays: number;
+  fresh10dHigh: boolean;
+  reasons: string[];
+  regimePhase?: RegimePhase;
+  regimeScore?: number;
+  regimeConfidence?: RegimeConfidence;
+  regimePriorSessions?: number;
+  regimeReturn3dPct?: number | null;
+  regimeReturn5dPct?: number | null;
+  regimeReturn10dPct?: number | null;
+  regimePriceMultiple10d?: number | null;
+  regimeExplosiveDays5?: number;
+  regimeLimitUpLikeDays5?: number;
+  regimeStrongDays10?: number;
+  regimeConsecutiveStrongDays?: number;
+  regimeConsecutiveLimitUpLikeDays?: number;
+  regimeFresh10dHigh?: boolean;
+  regimeReasons?: string[];
+};
+
 export type LiveSignal = {
   ticker: string;
   name: string;
@@ -83,6 +129,7 @@ export type AlertState = {
   stage: SignalStage;
   lastAt: number;
   lastScore: number;
+  regimePhase?: RegimePhase;
 };
 
 export type PendingAlertEvaluation = {
@@ -120,6 +167,7 @@ export type RadarState = {
   lastRunAt: number;
   previous: Record<string, MinimalSnapshot>;
   history: Record<string, HistoryPoint[]>;
+  regimeHistory: Record<string, RegimeDailyPoint[]>;
   alerts: Record<string, AlertState>;
   pendingEvaluations: PendingAlertEvaluation[];
   latestSignals: LiveSignal[];
