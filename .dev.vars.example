@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local testing only. Never commit real secrets.
+TELEGRAM_BOT_TOKEN=replace-me
+TELEGRAM_CHAT_ID=replace-me
+ADMIN_TOKEN=replace-with-a-long-random-token
