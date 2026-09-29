@@ -255,12 +255,20 @@ export async function configureTelegramBot(
     drop_pending_updates: true,
   });
 
-  const commands = ['live', 'regime', 'scan', 'feedtest', 'status', 'help'];
+  const commands = ['live', 'regime', 'scan', 'inspect', 'why', 'leaders', 'session', 'watch', 'watchlist', 'recap', 'terms', 'feedtest', 'status', 'help'];
   await telegramApi(env, 'setMyCommands', {
     commands: [
       { command: 'live', description: 'Intraday momentum scan (20s / session)' },
       { command: 'regime', description: 'Cross-session BIOC/TYCN-style regime scan' },
       { command: 'scan', description: 'Combined overview of all scan lanes' },
+      { command: 'inspect', description: 'Inspect one ticker in plain language' },
+      { command: 'why', description: 'Explain why a ticker is or is not a signal' },
+      { command: 'leaders', description: 'Show current liquid market leaders' },
+      { command: 'session', description: 'Explain the current market session' },
+      { command: 'watch', description: 'Add a ticker to personal watchlist' },
+      { command: 'watchlist', description: 'Show personal watchlist' },
+      { command: 'recap', description: 'Review today radar alerts and outcomes' },
+      { command: 'terms', description: 'Beginner glossary for radar terms' },
       { command: 'feedtest', description: 'Temporary live feed + Level II comparison' },
       { command: 'status', description: 'Show latest radar state' },
       { command: 'help', description: 'Show available commands' },
@@ -487,6 +495,270 @@ export function formatFeedTestResult(result: any): string {
   ].join('\n');
 }
 
+
+export function formatInspectResult(input: {
+  symbol: string;
+  row: any | null;
+  signal: LiveSignal | null;
+  market: any;
+}): string {
+  const { symbol, row, signal, market } = input;
+
+  if (!row) {
+    return `❌ مش لاقي <b>${escapeHtml(symbol)}</b> في EGX scanner الحالي.`;
+  }
+
+  const close = Number(row.close || 0);
+  const changePct = Number(row.changePct || 0);
+  const volume = Number(row.volume || 0);
+  const turnover = Number(row.turnover || 0);
+  const rvol = Number(row.rvol10 || 0);
+  const high = Number(row.high || 0);
+  const low = Number(row.low || 0);
+  const closeLocation = row.closeLocation === null || row.closeLocation === undefined
+    ? null
+    : Number(row.closeLocation);
+  const hodGap = high > 0 ? ((high - close) / high) * 100 : null;
+  const marketMedian = Number(market?.medianChangePct || 0);
+  const rs = changePct - marketMedian;
+
+  const status = signal
+    ? `${stageEmoji(signal.stage)} <b>${stageArabic(signal.stage)}</b> · score ${signal.score.toFixed(1)}/100`
+    : '⚪ <b>مفيش Signal رسمية دلوقتي</b>';
+
+  const notes: string[] = [];
+  if (changePct >= 5) notes.push('السهم قوي جدًا مقارنة بإقفال امبارح.');
+  else if (changePct >= 2) notes.push('السهم إيجابي بوضوح خلال الجلسة.');
+  else if (changePct <= -3) notes.push('السهم تحت ضغط بيع واضح خلال الجلسة.');
+
+  if (rvol >= 2) notes.push(`الحجم غير عادي: RVOL ${rvol.toFixed(2)}x.`);
+  else if (rvol >= 1.3) notes.push(`الحجم أعلى من المعتاد: RVOL ${rvol.toFixed(2)}x.`);
+
+  if (hodGap !== null && hodGap <= 1) notes.push('السعر قريب جدًا من قمة اليوم.');
+  if (closeLocation !== null && closeLocation >= 0.8) notes.push('السعر ماسك الجزء العلوي من range اليوم.');
+  if (rs >= 2) notes.push('السهم أقوى من السوق بوضوح.');
+
+  if (signal?.velocity1mPct !== undefined) {
+    if (signal.velocity1mPct >= 0.5) notes.push('آخر دقيقة فيها momentum إيجابي سريع.');
+    if (signal.velocity1mPct <= -0.5) notes.push('آخر دقيقة فيها فقدان momentum/رجوع سريع.');
+  }
+
+  return [
+    `🔎 <b>Inspect — ${escapeHtml(symbol)}</b>`,
+    status,
+    '',
+    `السعر: <b>${close.toFixed(3)}</b> · اليوم: <b>${signed(changePct)}</b>`,
+    `High / Low: <b>${high.toFixed(3)}</b> / <b>${low.toFixed(3)}</b>`,
+    `HOD gap: <b>${hodGap === null ? '—' : `${hodGap.toFixed(2)}%`}</b>`,
+    `Volume: <b>${volume.toLocaleString('en-US')}</b> · Turnover: <b>EGP ${money(turnover)}</b>`,
+    `RVOL10: <b>${rvol.toFixed(2)}x</b> · RS vs market: <b>${rs >= 0 ? '+' : ''}${rs.toFixed(2)}pp</b>`,
+    signal
+      ? `1m: <b>${signed(signal.velocity1mPct)}</b> · 3m: <b>${signed(signal.velocity3mPct)}</b> · lane: <b>${escapeHtml(signal.detectionLane || 'LIVE')}</b>`
+      : '',
+    signal?.regimePhase && signal.regimePhase !== 'NORMAL'
+      ? `Regime: <b>${escapeHtml(signal.regimePhase)}</b> · ${(signal.regimeScore ?? 0).toFixed(1)}/100`
+      : '',
+    '',
+    '<b>قراءتي المبسطة:</b>',
+    ...(notes.length ? notes.map((note) => `• ${note}`) : ['• مفيش حاجة استثنائية واضحة من المقاييس الحالية.']),
+    '',
+    'ℹ️ مصدر السعر الحالي للـinspect لسه TradingView لحد ما نثبت الـlive feed بكرة.',
+  ].filter(Boolean).join('\n');
+}
+
+export function formatWhyResult(input: {
+  symbol: string;
+  row: any | null;
+  signal: LiveSignal | null;
+  market: any;
+}): string {
+  const { symbol, row, signal, market } = input;
+
+  if (!row) return `❌ مش لاقي <b>${escapeHtml(symbol)}</b> في السوق الحالي.`;
+
+  if (signal) {
+    return [
+      `🧠 <b>Why — ${escapeHtml(symbol)}</b>`,
+      `الحالة: ${stageEmoji(signal.stage)} <b>${stageArabic(signal.stage)}</b> · score ${signal.score.toFixed(1)}/100`,
+      '',
+      '<b>الرادار شايفه ليه؟</b>',
+      ...(signal.reasons?.length
+        ? signal.reasons.slice(0, 8).map((reason) => `• ${escapeHtml(reason)}`)
+        : ['• combination من السعر + الحجم + القوة النسبية']),
+      '',
+      `1m ${signed(signal.velocity1mPct)} · 3m ${signed(signal.velocity3mPct)} · HOD gap ${signal.hodDistancePct.toFixed(2)}%`,
+      `RVOL ${signal.rvol10.toFixed(2)}x · RS ${signal.relativeStrengthPct >= 0 ? '+' : ''}${signal.relativeStrengthPct.toFixed(2)}pp`,
+      '',
+      '<b>المهم:</b> الـscore ترتيب نشاط، مش نسبة نجاح.',
+    ].join('\n');
+  }
+
+  const changePct = Number(row.changePct || 0);
+  const rvol = Number(row.rvol10 || 0);
+  const closeLocation = Number(row.closeLocation ?? 0.5);
+  const rs = changePct - Number(market?.medianChangePct || 0);
+
+  const blockers: string[] = [];
+  if (changePct < 1.5) blockers.push(`الحركة اليومية ${signed(changePct)} مش قوية كفاية للـsession-leader lane.`);
+  if (rvol < 1.3) blockers.push(`RVOL ${rvol.toFixed(2)}x مش ملفت قوي.`);
+  if (closeLocation < 0.6) blockers.push('السعر مش ماسك الجزء القوي من range اليوم.');
+  if (rs < 1) blockers.push(`Relative strength ${rs >= 0 ? '+' : ''}${rs.toFixed(2)}pp مش متفوق بوضوح على السوق.`);
+
+  return [
+    `🧠 <b>Why — ${escapeHtml(symbol)}</b>`,
+    '⚪ السهم <b>مش Signal رسمية دلوقتي</b>.',
+    '',
+    '<b>أسباب محتملة:</b>',
+    ...(blockers.length ? blockers.map((item) => `• ${item}`) : ['• المقاييس اليومية كويسة، لكن شروط الـmomentum اللحظي/score الكاملة لسه ما اكتملتش.']),
+    '',
+    'ده تفسير للشروط الحالية، مش حكم إن السهم وحش.',
+  ].join('\n');
+}
+
+export function formatLeadersResult(result: any): string {
+  const leaders = Array.isArray(result?.leaders) ? result.leaders.slice(0, 10) : [];
+  const market = result?.market || {};
+
+  if (!leaders.length) {
+    return '📈 <b>Leaders</b>\nمفيش liquid leaders متاحة في الـsnapshot الحالي.';
+  }
+
+  return [
+    '📈 <b>Current Liquid Leaders</b>',
+    `Market: <b>${escapeHtml(String(market.regime || 'UNKNOWN'))}</b> · Adv ${Number(market.advancers || 0)} / Dec ${Number(market.decliners || 0)}`,
+    '',
+    ...leaders.map((leader: any, index: number) => [
+      `${index + 1}. <b>${escapeHtml(String(leader.ticker || '-'))}</b> · ${Number(leader.close || 0).toFixed(3)} · Day ${signed(Number(leader.changePct || 0))}`,
+      `   RVOL ${Number(leader.rvol10 || 0).toFixed(2)}x · HOD gap ${Number(leader.hodDistancePct || 0).toFixed(2)}% · RS ${Number(leader.relativeStrengthPct || 0) >= 0 ? '+' : ''}${Number(leader.relativeStrengthPct || 0).toFixed(2)}pp · EGP ${money(Number(leader.turnover || 0))}`,
+    ].join('\n')),
+    '',
+    'دي قائمة اكتشاف، مش ترتيب "أفضل سهم للشراء".',
+  ].join('\n');
+}
+
+export function formatSessionResult(result: any): string {
+  const market = result?.market || {};
+  const adv = Number(market.advancers || 0);
+  const dec = Number(market.decliners || 0);
+  const unchanged = Number(market.unchanged || 0);
+  const directional = adv + dec;
+  const breadth = directional > 0 ? (adv / directional) * 100 : 50;
+  const regime = String(market.regime || 'UNKNOWN');
+
+  let read = 'السوق متوازن/مختلط نسبيًا.';
+  if (regime === 'RISK_ON') read = 'عدد الأسهم الصاعدة أعلى بوضوح؛ البيئة العامة داعمة نسبيًا للمومنتوم.';
+  if (regime === 'RISK_OFF') read = 'الهابطين مسيطرين؛ أي سهم قوي محتاج Relative Strength استثنائي أكتر.';
+  if (regime === 'MIXED') read = 'الحركة انتقائية؛ ركّز على الأسهم الأقوى بدل افتراض إن السوق كله طالع.';
+
+  return [
+    '🌐 <b>EGX Session</b>',
+    result?.atCairo ? `🕒 ${escapeHtml(String(result.atCairo))}` : '',
+    '',
+    `Regime: <b>${escapeHtml(regime)}</b>`,
+    `Advancers: <b>${adv}</b> · Decliners: <b>${dec}</b> · Unchanged: <b>${unchanged}</b>`,
+    `Breadth: <b>${breadth.toFixed(1)}%</b>`,
+    `Median stock change: <b>${signed(Number(market.medianChangePct || 0))}</b>`,
+    `Signals الآن: <b>${Number(result?.signalCount || 0)}</b>`,
+    '',
+    '<b>يعني إيه؟</b>',
+    read,
+  ].filter(Boolean).join('\n');
+}
+
+export function formatWatchlistResult(symbols: string[], state: RadarState): string {
+  if (!symbols.length) {
+    return '⭐ <b>Watchlist</b>\nفاضية دلوقتي. استخدم <code>/watch BIOC</code>.';
+  }
+
+  const byTicker = new Map((state.latestSignals || []).map((signal) => [signal.ticker, signal]));
+
+  return [
+    '⭐ <b>Personal Watchlist</b>',
+    '',
+    ...symbols.map((symbol, index) => {
+      const signal = byTicker.get(symbol);
+      if (!signal) return `${index + 1}. <b>${escapeHtml(symbol)}</b> · no active radar signal`;
+      return `${index + 1}. <b>${escapeHtml(symbol)}</b> · ${stageEmoji(signal.stage)} ${signal.stage} · ${signal.score.toFixed(1)} · Day ${signed(signal.changePct)}`;
+    }),
+    '',
+    'استخدم /inspect TICKER لأي سهم عشان تشوف التفاصيل.',
+  ].join('\n');
+}
+
+export function formatRecapResult(
+  sessionDate: string,
+  recap: { events: any[]; outcomes: any[] },
+): string {
+  const events = Array.isArray(recap?.events) ? recap.events : [];
+  const outcomes = Array.isArray(recap?.outcomes) ? recap.outcomes : [];
+
+  if (!events.length) {
+    return [
+      '🧾 <b>Session Recap</b>',
+      `Session: <b>${escapeHtml(sessionDate || '-')}</b>`,
+      '',
+      'مفيش alert events متسجلة للجلسة دي.',
+    ].join('\n');
+  }
+
+  const outcomeMap = new Map<string, any[]>();
+  for (const outcome of outcomes) {
+    const id = String(outcome?.event_id || '');
+    if (!id) continue;
+    const current = outcomeMap.get(id) || [];
+    current.push(outcome);
+    outcomeMap.set(id, current);
+  }
+
+  const rows = events.slice(-12).map((event: any, index: number) => {
+    const eventOutcomes = (outcomeMap.get(String(event.event_id || '')) || [])
+      .sort((a, b) => Number(a.horizon_minutes || 0) - Number(b.horizon_minutes || 0));
+    const latest = eventOutcomes.at(-1);
+    const bestMfe = eventOutcomes.length
+      ? Math.max(...eventOutcomes.map((x) => Number(x.mfe_pct || 0)))
+      : null;
+    const worstMae = eventOutcomes.length
+      ? Math.min(...eventOutcomes.map((x) => Number(x.mae_pct || 0)))
+      : null;
+    const time = String(event.observed_at || '').slice(11, 16);
+
+    return [
+      `${index + 1}. <b>${escapeHtml(String(event.ticker || '-'))}</b> · ${escapeHtml(String(event.stage || '-'))} · score ${Number(event.score || 0).toFixed(1)} · ${time || '--:--'} UTC`,
+      `   Alert price ${Number(event.entry_price || 0).toFixed(3)}${latest ? ` · ${Number(latest.horizon_minutes)}m ${signed(Number(latest.forward_return_pct || 0))}` : ' · outcome pending'}`,
+      bestMfe === null ? '' : `   MFE <b>${signed(bestMfe)}</b> · MAE <b>${signed(worstMae || 0)}</b>`,
+    ].filter(Boolean).join('\n');
+  });
+
+  return [
+    '🧾 <b>Session Recap</b>',
+    `Session: <b>${escapeHtml(sessionDate)}</b> · Alerts: <b>${events.length}</b>`,
+    '',
+    ...rows,
+    '',
+    'MFE = أكبر حركة لصالح الإشارة بعد التنبيه. MAE = أكبر حركة عكسها.',
+  ].join('\n');
+}
+
+export function telegramTermsText(): string {
+  return [
+    '📚 <b>مصطلحات الرادار السريعة</b>',
+    '',
+    '<b>HOD</b> — High of Day، أعلى سعر وصل له السهم النهارده.',
+    '<b>HOD gap</b> — السهم بعيد كام % عن أعلى سعر اليوم.',
+    '<b>RVOL</b> — حجم التداول الحالي مقارنة بالمعتاد. 2x يعني تقريبًا ضعف الطبيعي.',
+    '<b>RS</b> — Relative Strength، قوة السهم مقارنة بمتوسط السوق، مش RSI.',
+    '<b>Breadth</b> — نسبة واتجاه الأسهم الصاعدة مقابل الهابطة.',
+    '<b>WATCH</b> — سهم يستحق المتابعة، مش أمر شراء.',
+    '<b>TRIGGERING</b> — الزخم اللحظي بيتقوى والإشارة بتتكون.',
+    '<b>BREAKOUT</b> — اختراق لحظي قوي/قمة جديدة حسب شروط الرادار.',
+    '<b>MFE</b> — أكبر مكسب نظري بعد التنبيه.',
+    '<b>MAE</b> — أكبر حركة سلبية بعد التنبيه.',
+    '<b>Regime</b> — هل السهم دخل سلوك momentum غير طبيعي عبر أكتر من جلسة.',
+    '',
+    'استخدم <code>/why TICKER</code> عشان البوت يشرح إشارة سهم بعينه.',
+  ].join('\n');
+}
+
 export function formatRadarStatus(state: RadarState): string {
   const signals = state.latestSignals || [];
   return [
@@ -508,6 +780,15 @@ export function telegramHelpText(): string {
     '⚡ /live — Intraday momentum: 20s velocity + volume + session leaders',
     '🧭 /regime — Multi-session regime detector: BIOC/TYCN-style abnormal momentum',
     '📡 /scan — Combined overview لكل الـscan lanes',
+    '🔎 /inspect TICKER — تحليل سهم واحد بلغة بسيطة',
+    '🧠 /why TICKER — ليه السهم Signal أو ليه مش داخل الرادار',
+    '📈 /leaders — أقوى liquid movers الحالية',
+    '🌐 /session — حالة السوق والـbreadth',
+    '⭐ /watch TICKER — ضيف سهم للمتابعة الشخصية',
+    '⭐ /unwatch TICKER — شيل سهم من المتابعة',
+    '⭐ /watchlist — اعرض قائمة المتابعة',
+    '🧾 /recap — مراجعة alerts الجلسة ونتايجها',
+    '📚 /terms — شرح المصطلحات للمبتدئ',
     '🧪 /feedtest TICKER — اختبار مؤقت لـRapidAPI: السعر + Level II + مقارنة TradingView',
     '🛰 /status — آخر حالة وstate للـradar',
     '❓ /help — شرح الأوامر',
