@@ -609,3 +609,22 @@ Signals now carry a `detectionLane` value:
 This is the command convention for future expansion: every new scan strategy gets its own explicit Telegram command and lane identifier; `/scan` only aggregates them.
 
 Manual scans call the coordinator with `notify=0`, so checking `/live`, `/regime`, or `/scan` does not consume automatic alert cooldowns or create duplicate alert events.
+
+
+## Beginner workflow commands
+
+These commands are deliberately separate from scan strategies.
+
+- `/inspect TICKER` — inspect one EGX ticker in plain language. Shows current price, day move, HOD gap, volume/turnover, RVOL, relative strength, active radar signal, short momentum, and regime context when available.
+- `/why TICKER` — explain why a ticker is currently a radar signal, or which broad conditions are missing if it is not.
+- `/leaders` — current liquid leaders from the session-discovery ranking.
+- `/session` — explain breadth, median stock move, risk regime, and current signal count.
+- `/watch TICKER` — persist a ticker in the personal Durable Object watchlist.
+- `/unwatch TICKER` — remove it.
+- `/watchlist` — show the persistent personal watchlist and current radar stage when a watched ticker has an active signal.
+- `/recap` — read the session's persisted alert events and available 5/10/20/30-minute outcomes from Supabase, including MFE/MAE.
+- `/terms` — beginner glossary for HOD, RVOL, RS, breadth, signal stages, MFE/MAE, and regime terminology.
+
+The watchlist survives daily radar-session rollover. It is currently a persistent focus list; dedicated watchlist-only transition/loss-of-momentum notifications should be added separately rather than overloading the global alert cooldown logic.
+
+Until the real-time feed is validated, `/inspect`, `/leaders`, and `/session` still inherit the TradingView scanner's data limitations. The command UX is source-agnostic so the underlying feed can later be swapped without changing the user-facing workflow.
