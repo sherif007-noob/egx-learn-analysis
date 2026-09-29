@@ -85,6 +85,35 @@ export type AlertState = {
   lastScore: number;
 };
 
+export type PendingAlertEvaluation = {
+  eventId: string;
+  ticker: string;
+  createdAt: number;
+  entryPrice: number;
+  stage: SignalStage;
+  score: number;
+  maxPrice: number;
+  minPrice: number;
+  remainingHorizons: number[];
+};
+
+export type AlertOutcome = {
+  eventId: string;
+  horizonMinutes: number;
+  evaluatedAt: string;
+  price: number;
+  forwardReturnPct: number;
+  maxPrice: number;
+  minPrice: number;
+  mfePct: number;
+  maePct: number;
+  hit05Pct: boolean;
+  hit1Pct: boolean;
+  hit2Pct: boolean;
+  drawdown05Pct: boolean;
+  drawdown1Pct: boolean;
+};
+
 export type RadarState = {
   updatedAt: string;
   sessionDate: string;
@@ -92,6 +121,7 @@ export type RadarState = {
   previous: Record<string, MinimalSnapshot>;
   history: Record<string, HistoryPoint[]>;
   alerts: Record<string, AlertState>;
+  pendingEvaluations: PendingAlertEvaluation[];
   latestSignals: LiveSignal[];
   market: MarketContext;
   lastUniverseCount: number;
