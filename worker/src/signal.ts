@@ -1,4 +1,10 @@
-import type { LiveSignal, MinimalSnapshot, ScannerRow } from './types';
+import type {
+  DeepMetrics,
+  LiveSignal,
+  MarketContext,
+  MinimalSnapshot,
+  ScannerRow,
+} from './types';
 
 const clamp = (value: number, low = 0, high = 1) => Math.max(low, Math.min(high, value));
 
@@ -29,6 +35,8 @@ export function toSnapshot(row: ScannerRow): MinimalSnapshot | null {
 export function buildSignal(
   row: ScannerRow,
   previous: MinimalSnapshot,
+  deep: DeepMetrics,
+  market: MarketContext,
   config: {
     intervalSeconds: number;
     minScore: number;
@@ -69,13 +77,18 @@ export function buildSignal(
   const dailyChange = row.changePct ?? 0;
   const rvol10 = row.rvol10 ?? 0;
 
-  const liquidityScore = clamp((Math.log10(Math.max(row.turnover, 1)) - 7) / 2) * 20;
-  const priceVelocityScore = clamp(Math.max(0, priceVelocityPerMinute) / 0.8) * 22;
-  const paceScore = clamp((volumePace - 0.8) / 3.2) * 22;
-  const locationScore = clamp((closeLocation - 0.5) / 0.5) * 12;
-  const hodScore = clamp((0.8 - hodDistancePct) / 0.8) * 10;
-  const dailyMomentumScore = clamp(Math.max(0, dailyChange) / 8) * 7;
-  const rvolScore = clamp((rvol10 - 0.8) / 2.2) * 7;
+  const liquidityScore = clamp((Math.log10(Math.max(row.turnover, 1)) - 7) / 2) * 18;
+  const priceVelocityScore = clamp(Math.max(0, priceVelocityPerMinute) / 0.8) * 18;
+  const paceScore = clamp((volumePace - 0.8) / 3.2) * 18;
+  const locationScore = clamp((closeLocation - 0.5) / 0.5) * 10;
+  const hodScore = clamp((0.8 - hodDistancePct) / 0.8) * 8;
+  const dailyMomentumScore = clamp(Math.max(0, dailyChange) / 8) * 6;
+  const rvolScore = clamp((rvol10 - 0.8) / 2.2) * 6;
+
+  const velocity1mScore = clamp(Math.max(0, deep.velocity1mPct) / 1.2) * 6;
+  const velocity3mScore = clamp(Math.max(0, deep.velocity3mPct) / 2.2) * 4;
+  const relativeStrengthScore = clamp(Math.max(0, deep.relativeStrengthPct) / 3) * 5;
+  const persistenceScore = clamp(deep.positiveIntervals5 / 4) * 3;
 
   let score = liquidityScore
     + priceVelocityScore
@@ -83,10 +96,25 @@ export function buildSignal(
     + locationScore
     + hodScore
     + dailyMomentumScore
-    + rvolScore;
+    + rvolScore
+    + velocity1mScore
+    + velocity3mScore
+    + relativeStrengthScore
+    + persistenceScore;
 
+  if (deep.higherLow) score += 3;
   if (newHod && priceVelocityPerMinute > 0) score += 5;
+  if (newHod && deep.compressionPct <= 0.75) score += 3;
+
+  if (market.regime === 'RISK_ON') {
+    score += 2;
+  } else if (market.regime === 'RISK_OFF') {
+    score += deep.relativeStrengthPct >= 2 ? 2 : -5;
+  }
+
   if (priceVelocityPerMinute < -0.15) score -= 12;
+  if (deep.velocity1mPct < -0.25) score -= 8;
+
   score = Math.max(0, Math.min(100, Math.round(score * 10) / 10));
 
   let stage: LiveSignal['stage'] | null = null;
@@ -100,7 +128,8 @@ export function buildSignal(
   } else if (
     score >= config.minScore &&
     priceVelocityPerMinute >= 0 &&
-    closeLocation >= 0.6
+    closeLocation >= 0.6 &&
+    deep.velocity1mPct >= -0.05
   ) {
     stage = 'WATCH';
   }
@@ -111,14 +140,24 @@ export function buildSignal(
   if (volumePace >= 2) reasons.push(`volume pace ${volumePace.toFixed(1)}x`);
   else if (volumePace >= 1.3) reasons.push(`volume pace ${volumePace.toFixed(1)}x`);
   if (priceVelocityPerMinute >= 0.15) reasons.push(`velocity +${priceVelocityPerMinute.toFixed(2)}%/min`);
+  if (deep.velocity1mPct >= 0.35) reasons.push(`1m +${deep.velocity1mPct.toFixed(2)}%`);
+  if (deep.velocity3mPct >= 0.8) reasons.push(`3m +${deep.velocity3mPct.toFixed(2)}%`);
+  if (deep.relativeStrengthPct >= 1.5) reasons.push(`RS +${deep.relativeStrengthPct.toFixed(2)}pp vs market`);
+  if (deep.positiveIntervals5 >= 4) reasons.push(`${deep.positiveIntervals5}/5 positive intervals`);
+  if (deep.higherLow) reasons.push('micro higher-low');
+  if (deep.compressionPct <= 0.6) reasons.push(`2m compression ${deep.compressionPct.toFixed(2)}%`);
   if (newHod) reasons.push('new HOD');
   else if (hodDistancePct <= 0.35) reasons.push(`${hodDistancePct.toFixed(2)}% from HOD`);
   if (closeLocation >= 0.8) reasons.push('upper 20% of day range');
   if (rvol10 >= 1.5) reasons.push(`RVOL10 ${rvol10.toFixed(2)}x`);
+  if (market.regime === 'RISK_OFF' && deep.relativeStrengthPct >= 2) {
+    reasons.push('holding strength in weak tape');
+  }
 
   return {
     ticker: row.ticker,
     name: row.name,
+    sector: row.sector,
     stage,
     score,
     close: row.close,
@@ -132,6 +171,15 @@ export function buildSignal(
     closeLocation,
     hodDistancePct,
     newHod,
+    velocity1mPct: deep.velocity1mPct,
+    velocity3mPct: deep.velocity3mPct,
+    relativeStrengthPct: deep.relativeStrengthPct,
+    positiveIntervals5: deep.positiveIntervals5,
+    higherLow: deep.higherLow,
+    compressionPct: deep.compressionPct,
+    marketBreadthRatio: market.breadthRatio,
+    marketMedianChangePct: market.medianChangePct,
+    marketRegime: market.regime,
     reasons,
   };
 }
