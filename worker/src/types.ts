@@ -53,6 +53,7 @@ export type AlertState = {
 
 export type RadarState = {
   updatedAt: string;
+  sessionDate: string;
   lastRunAt: number;
   previous: Record<string, MinimalSnapshot>;
   alerts: Record<string, AlertState>;
