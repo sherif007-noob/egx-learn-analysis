@@ -2,8 +2,10 @@ import { fetchCalibrationSummary, supabaseConfigured } from './supabase';
 import {
   configureTelegramBot,
   deriveTelegramWebhookSecret,
+  formatLiveScanResult,
   formatManualScanResult,
   formatRadarStatus,
+  formatRegimeScanResult,
   sendTelegramMessage,
   telegramBotStatus,
   telegramHelpText,
@@ -50,13 +52,30 @@ async function handleTelegramCommand(update: any, env: RadarEnv): Promise<void> 
   const rawCommand = text.split(/\s+/)[0]?.toLowerCase() || '';
   const command = rawCommand.split('@')[0];
 
-  if (command === '/scan') {
-    await sendTelegramMessage(env, chatId, '🔎 <b>بعمل live scan دلوقتي...</b>');
-    const response = await coordinator(env).fetch('https://radar.internal/tick?force=1', {
-      method: 'POST',
-    });
+  if (command === '/live' || command === '/regime' || command === '/scan') {
+    const label = command === '/live'
+      ? '⚡ <b>بعمل intraday momentum scan...</b>'
+      : command === '/regime'
+        ? '🧭 <b>بعمل cross-session regime scan...</b>'
+        : '📡 <b>بعمل combined scan لكل الـlanes...</b>';
+
+    await sendTelegramMessage(env, chatId, label);
+
+    // Manual commands should inspect the current market without consuming
+    // automatic-alert cooldowns or creating duplicate Telegram alerts.
+    const response = await coordinator(env).fetch(
+      'https://radar.internal/tick?force=1&notify=0',
+      { method: 'POST' },
+    );
     const result = await response.json();
-    await sendTelegramMessage(env, chatId, formatManualScanResult(result));
+
+    const formatted = command === '/live'
+      ? formatLiveScanResult(result)
+      : command === '/regime'
+        ? formatRegimeScanResult(result)
+        : formatManualScanResult(result);
+
+    await sendTelegramMessage(env, chatId, formatted);
     return;
   }
 
