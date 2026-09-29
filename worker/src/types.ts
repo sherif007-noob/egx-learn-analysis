@@ -79,21 +79,6 @@ export type RegimeMetrics = {
   consecutiveLimitUpLikeDays: number;
   fresh10dHigh: boolean;
   reasons: string[];
-  regimePhase?: RegimePhase;
-  regimeScore?: number;
-  regimeConfidence?: RegimeConfidence;
-  regimePriorSessions?: number;
-  regimeReturn3dPct?: number | null;
-  regimeReturn5dPct?: number | null;
-  regimeReturn10dPct?: number | null;
-  regimePriceMultiple10d?: number | null;
-  regimeExplosiveDays5?: number;
-  regimeLimitUpLikeDays5?: number;
-  regimeStrongDays10?: number;
-  regimeConsecutiveStrongDays?: number;
-  regimeConsecutiveLimitUpLikeDays?: number;
-  regimeFresh10dHigh?: boolean;
-  regimeReasons?: string[];
 };
 
 export type LiveSignal = {
@@ -123,6 +108,21 @@ export type LiveSignal = {
   marketMedianChangePct: number;
   marketRegime: MarketRegime;
   reasons: string[];
+  regimePhase?: RegimePhase;
+  regimeScore?: number;
+  regimeConfidence?: RegimeConfidence;
+  regimePriorSessions?: number;
+  regimeReturn3dPct?: number | null;
+  regimeReturn5dPct?: number | null;
+  regimeReturn10dPct?: number | null;
+  regimePriceMultiple10d?: number | null;
+  regimeExplosiveDays5?: number;
+  regimeLimitUpLikeDays5?: number;
+  regimeStrongDays10?: number;
+  regimeConsecutiveStrongDays?: number;
+  regimeConsecutiveLimitUpLikeDays?: number;
+  regimeFresh10dHigh?: boolean;
+  regimeReasons?: string[];
 };
 
 export type AlertState = {
