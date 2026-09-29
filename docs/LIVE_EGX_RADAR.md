@@ -1,5 +1,7 @@
 # EGX Live Radar — Cloudflare Worker
 
+> Production deployment branch: `feature/cloudflare-live-radar`.
+
 ## Goal
 
 Run a live intraday market radar during the EGX session, scan the full TradingView Egypt universe repeatedly, shortlist unusual momentum, and send Telegram alerts before a stock becomes an obvious top gainer.
