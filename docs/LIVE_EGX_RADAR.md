@@ -506,3 +506,24 @@ The intended workflow is:
 3. Telegram surfaces the name early,
 4. live Depth + Trades confirms or rejects the execution setup,
 5. outcome calibration tells us later which regime patterns actually had edge.
+
+
+## Telegram command architecture
+
+Manual Telegram scans are split by strategy instead of putting every detector behind one command.
+
+- `/live` — intraday momentum scan. Shows the fast 20-second lane plus session-leader discovery. It excludes candidates that exist only because of the cross-session regime detector.
+- `/regime` — cross-session momentum-regime scan. Shows only tickers currently classified as `ABNORMAL`, `ACCELERATING`, or `SELF_REINFORCING`.
+- `/scan` — combined overview across all scan lanes. This remains a convenience command, not the home of a specific strategy.
+- `/status` — current radar state.
+- `/help` — command directory.
+
+Signals now carry a `detectionLane` value:
+
+- `LIVE` — fast interval momentum.
+- `SESSION` — broader strong-session discovery.
+- `REGIME` — cross-session regime-only discovery.
+
+This is the command convention for future expansion: every new scan strategy gets its own explicit Telegram command and lane identifier; `/scan` only aggregates them.
+
+Manual scans call the coordinator with `notify=0`, so checking `/live`, `/regime`, or `/scan` does not consume automatic alert cooldowns or create duplicate alert events.
