@@ -503,3 +503,30 @@ Next after production data is collected:
 - tune alert thresholds by time of day,
 - add richer opening-range and pullback/reclaim states,
 - order-flow Depth/Trades integration only when a reliable feed is available.
+
+
+## Live Radar Phase 3 — completed
+
+Adaptive-calibration data collection is now implemented.
+
+Each emitted alert can be followed for 5/10/20/30 minutes within the same trading session. The radar stores:
+
+- alert-time feature snapshot,
+- forward return,
+- MFE / MAE,
+- +0.5% / +1% / +2% hit flags,
+- -0.5% / -1% adverse-excursion flags,
+- stage / score bucket / time bucket / market regime.
+
+Supabase additions:
+- `live_radar_alert_events`
+- `live_radar_alert_outcomes`
+- `live_radar_calibration_summary`
+
+Worker endpoint:
+- `GET /api/calibration`
+
+Calibration policy:
+- collect data first,
+- do not auto-change thresholds on tiny samples,
+- tune score/time/regime thresholds only after statistically useful observations accumulate.
