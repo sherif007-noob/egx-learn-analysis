@@ -322,3 +322,66 @@ npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 `SUPABASE_URL` is already configured as a normal Worker variable because the project URL is not a credential.
 
 This database history is the basis for the next calibration phase: measuring which alerts actually produced useful forward movement instead of guessing score weights forever.
+
+
+## Phase 3 — implemented: outcome calibration
+
+Every Telegram-selected alert is now assigned a unique event ID and, when enough market time remains, is tracked at:
+
+- **5 minutes**
+- **10 minutes**
+- **20 minutes**
+- **30 minutes**
+
+The tracker updates approximately every live radar poll and records:
+
+- forward return from the alert price,
+- maximum favorable excursion (**MFE**),
+- maximum adverse excursion (**MAE**),
+- whether the move reached +0.5%, +1%, or +2%,
+- whether it suffered -0.5% or -1% drawdown first/within the measured window.
+
+Alerts too close to the 14:30 close only receive horizons that can actually finish during the same EGX session. This prevents overnight price moves from contaminating the intraday calibration.
+
+### New Supabase tables
+
+- `live_radar_alert_events` — the exact feature snapshot at alert time
+- `live_radar_alert_outcomes` — 5/10/20/30-minute forward outcomes
+
+New aggregate view:
+
+- `live_radar_calibration_summary`
+
+The view groups outcomes by:
+
+- signal stage,
+- time-of-day bucket,
+- market regime,
+- score bucket,
+- forward horizon.
+
+It calculates sample count, average/median forward return, MFE/MAE, positive rate, +0.5/+1/+2 hit rates, and -0.5/-1 drawdown rates.
+
+The schema is committed at:
+
+`supabase/migrations/20260929100500_live_radar_calibration.sql`
+
+and has already been applied to the configured Supabase project.
+
+### Calibration API
+
+```http
+GET /api/calibration
+Authorization: Bearer <ADMIN_TOKEN>
+```
+
+The endpoint returns the aggregated calibration rows from Supabase.
+
+Do **not** auto-tune thresholds from a handful of observations. The intended workflow is:
+
+1. collect several full EGX sessions,
+2. require a meaningful sample size per score/stage/time bucket,
+3. compare MFE against MAE and false-breakout rate,
+4. then adjust `MIN_SCORE`, `TRIGGER_SCORE`, cooldown, and time-of-day rules.
+
+Until enough samples exist, the live score remains a discovery heuristic rather than a statistically calibrated probability.
