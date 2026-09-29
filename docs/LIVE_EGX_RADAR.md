@@ -226,6 +226,88 @@ Set in `wrangler.jsonc`:
 | `MIN_MINUTE_TURNOVER_EGP` | 120,000 | Normalized flow gate |
 | `MIN_VOLUME_SHARES` | 100,000 | Daily volume gate |
 
+
+## RapidAPI EGX shadow feed — validation infrastructure
+
+The production radar still uses the TradingView Egypt scanner while the new feed is validated. RapidAPI is intentionally wired in **shadow mode** first so a bad or delayed third-party feed cannot silently replace the production input.
+
+The current EGX Live RapidAPI listing documents:
+
+- real-time quote: `/api/price/{symbol}`
+- 5-level depth: `/api/depth_5/{symbol}`
+- 40-level depth: `/api/depth_40/{symbol}`
+- market breadth: `/api/summary`
+- movers: `/api/movers`
+- symbol directory: `/api/symbols`
+- provider health: `/health`
+
+The public listing does **not** currently document a time-and-sales / individual trades endpoint, so this phase can validate real-time price, cumulative volume, best bid/ask, Level II depth, breadth, and movers, but it does not yet complete the Trades side of the intended order-flow layer.
+
+### Cloudflare runtime settings
+
+Normal vars:
+
+```text
+RAPIDAPI_ENABLED=true
+RAPIDAPI_HOST=<copy the exact X-RapidAPI-Host value from the RapidAPI code sample>
+RAPIDAPI_TIMEOUT_MS=5000
+```
+
+Secret:
+
+```text
+RAPIDAPI_KEY=<your X-RapidAPI-Key>
+```
+
+Do not commit the API key. `RAPIDAPI_BASE_URL` is also supported as an optional override. If it is omitted, the Worker calls `https://<RAPIDAPI_HOST>`.
+
+### Protected validation endpoints
+
+All endpoints below are behind the existing `ADMIN_TOKEN` protection.
+
+```http
+GET /api/feed/status
+GET /api/feed/probe
+GET /api/feed/quote?symbol=BIOC
+GET /api/feed/depth?symbol=BIOC&levels=5
+GET /api/feed/depth?symbol=BIOC&levels=40
+GET /api/feed/summary
+GET /api/feed/movers?limit=10
+GET /api/feed/symbols
+GET /api/feed/sample?symbol=BIOC&levels=5
+GET /api/feed/compare?symbol=BIOC
+```
+
+`/api/feed/sample` returns quote + depth + breadth together and derives the current spread. It is intended for side-by-side checking against a trusted live screen during the session.
+
+`/api/feed/compare` compares RapidAPI's current quote against the existing TradingView scanner snapshot and reports the RapidAPI data age from the provider timestamp. This is useful for proving the current 15-minute TradingView-delay problem quantitatively.
+
+### Validation rule before promotion
+
+Do not switch the automatic radar to RapidAPI merely because requests return 200.
+
+During a live EGX session verify:
+
+1. provider `updated_at` is within seconds of wall-clock time,
+2. last price matches the trusted live screen,
+3. best bid / ask and top depth levels match,
+4. session cumulative volume is consistent,
+5. updates continue under fast price movement,
+6. rate-limit headroom is enough for the intended polling architecture.
+
+Only after that should the source adapter be promoted from shadow validation into the live radar path.
+
+### Command architecture
+
+RapidAPI is a **data source**, not a scanning strategy, so it is not being dumped into `/scan`. The existing convention remains:
+
+- `/live` — intraday momentum strategy
+- `/regime` — cross-session regime strategy
+- `/scan` — combined overview only
+
+Any genuinely new scanning strategy gets its own command and detection lane. Feed diagnostics stay separate from strategy commands.
+
+
 ## Current limitation: Depth / Trades
 
 Version 1 uses TradingView scanner data for market-wide discovery. It does **not** scrape Thndr's private UI or assume that displayed order-book walls are real support/resistance.
