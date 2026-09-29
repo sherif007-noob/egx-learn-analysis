@@ -33,10 +33,11 @@ export type LiveSignal = {
   score: number;
   close: number;
   changePct: number;
-  priceDelta1mPct: number;
-  volumeDelta1m: number;
-  minuteTurnover: number;
-  minuteVolumePace: number;
+  intervalSeconds: number;
+  priceDeltaPct: number;
+  volumeDelta: number;
+  intervalTurnover: number;
+  volumePace: number;
   rvol10: number;
   closeLocation: number;
   hodDistancePct: number;
@@ -52,22 +53,43 @@ export type AlertState = {
 
 export type RadarState = {
   updatedAt: string;
+  lastRunAt: number;
   previous: Record<string, MinimalSnapshot>;
   alerts: Record<string, AlertState>;
   latestSignals: LiveSignal[];
   lastUniverseCount: number;
 };
 
+export type RadarConfig = {
+  enabled: boolean;
+  timeZone: string;
+  sessionStart: string;
+  sessionEnd: string;
+  pollSeconds: number;
+  minScore: number;
+  triggerScore: number;
+  cooldownMinutes: number;
+  maxCandidates: number;
+  minDailyTurnover: number;
+  minMinuteTurnover: number;
+  minVolumeShares: number;
+};
+
+export type DurableStubLike = {
+  fetch(input: Request | string, init?: RequestInit): Promise<Response>;
+};
+
+export type DurableNamespaceLike = {
+  getByName(name: string): DurableStubLike;
+};
+
 export type RadarEnv = {
-  LIVE_RADAR_STATE?: {
-    get(key: string, options?: { type?: 'text' | 'json' }): Promise<any>;
-    put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
-    delete(key: string): Promise<void>;
-  };
+  RADAR_COORDINATOR: DurableNamespaceLike;
   RADAR_ENABLED?: string;
   CAIRO_TZ?: string;
   SESSION_START?: string;
   SESSION_END?: string;
+  POLL_SECONDS?: string;
   MIN_SCORE?: string;
   TRIGGER_SCORE?: string;
   ALERT_COOLDOWN_MINUTES?: string;
