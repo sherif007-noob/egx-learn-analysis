@@ -277,3 +277,48 @@ If a reliable depth/trades feed becomes available:
 - absorption/rejection confirmation.
 
 That layer should confirm or reject radar signals; it should not replace the market-wide scanner.
+
+
+## Phase 2 — implemented: rolling deep watcher
+
+The Cloudflare Durable Object now keeps a short rolling history for every resolvable EGX symbol and enriches each live signal with:
+
+- **1-minute velocity**
+- **3-minute velocity**
+- **relative strength versus the median EGX stock**
+- **market breadth** (advancers / decliners)
+- automatic **RISK_ON / MIXED / RISK_OFF** regime
+- number of positive recent intervals
+- micro **higher-low** detection
+- 2-minute price compression
+- stronger scoring for stocks holding up while the broad tape is weak
+
+This is intentionally derived from repeated market snapshots, so it remains Cloudflare-compatible and does not require a permanent Node/WebSocket process.
+
+## Supabase persistence — implemented
+
+The live radar now writes research data into the existing EGX Portfolio Supabase project.
+
+Tables:
+
+- `live_radar_runs` — one row per scan, including breadth/regime
+- `live_radar_signals` — historical WATCH/TRIGGERING/BREAKOUT observations
+- `live_radar_latest` — upserted latest state per signaled ticker
+
+RLS is enabled; the Worker writes with a server-side service-role secret.
+
+The migration is committed at:
+
+`supabase/migrations/20260929094500_live_radar.sql`
+
+and has already been applied to the project.
+
+### Required Cloudflare secret
+
+```bash
+npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+```
+
+`SUPABASE_URL` is already configured as a normal Worker variable because the project URL is not a credential.
+
+This database history is the basis for the next calibration phase: measuring which alerts actually produced useful forward movement instead of guessing score weights forever.
