@@ -3,6 +3,7 @@ import type {
   LiveSignal,
   MarketContext,
   MinimalSnapshot,
+  RegimeMetrics,
   ScannerRow,
 } from './types';
 
@@ -263,6 +264,88 @@ export function buildSessionWatch(
     velocity1mPct: deep.velocity1mPct,
     velocity3mPct: deep.velocity3mPct,
     relativeStrengthPct,
+    positiveIntervals5: deep.positiveIntervals5,
+    higherLow: deep.higherLow,
+    compressionPct: deep.compressionPct,
+    marketBreadthRatio: market.breadthRatio,
+    marketMedianChangePct: market.medianChangePct,
+    marketRegime: market.regime,
+    reasons,
+  };
+}
+
+
+export function buildRegimeWatch(
+  row: ScannerRow,
+  deep: DeepMetrics,
+  market: MarketContext,
+  regime: RegimeMetrics,
+  config: {
+    intervalSeconds: number;
+    minDailyTurnover: number;
+    minVolumeShares: number;
+  },
+): LiveSignal | null {
+  if (regime.phase === 'NORMAL') return null;
+
+  if (
+    row.close === null
+    || row.volume === null
+    || row.high === null
+    || row.turnover === null
+  ) return null;
+
+  // The regime lane is deliberately a discovery lane, not an execution lane.
+  // It can surface a BIOC/TYCN-style transition even if the latest 20-second
+  // interval is quiet, but it still requires tradable liquidity.
+  if (
+    row.turnover < config.minDailyTurnover
+    || row.volume < config.minVolumeShares
+  ) return null;
+
+  const dailyChange = row.changePct ?? 0;
+  const rvol10 = row.rvol10 ?? 0;
+  const closeLocation = row.closeLocation ?? 0.5;
+  const hodDistancePct = row.high > 0 ? ((row.high - row.close) / row.high) * 100 : 100;
+
+  if (regime.phase === 'ABNORMAL' && dailyChange < 3 && rvol10 < 2) return null;
+  if (closeLocation < 0.25 && dailyChange < 8) return null;
+
+  const baseScore = regime.phase === 'SELF_REINFORCING'
+    ? Math.max(82, regime.score)
+    : regime.phase === 'ACCELERATING'
+      ? Math.max(72, regime.score)
+      : Math.max(64, regime.score);
+
+  const reasons = [
+    `regime ${regime.phase.toLowerCase().replace(/_/g, ' ')} ${regime.score.toFixed(1)}`,
+    ...regime.reasons,
+  ];
+
+  if (deep.relativeStrengthPct >= 1.5) {
+    reasons.push(`RS +${deep.relativeStrengthPct.toFixed(2)}pp vs market`);
+  }
+
+  return {
+    ticker: row.ticker,
+    name: row.name,
+    sector: row.sector,
+    stage: 'WATCH',
+    score: Math.min(100, Math.round(baseScore * 10) / 10),
+    close: row.close,
+    changePct: dailyChange,
+    intervalSeconds: Math.max(5, config.intervalSeconds),
+    priceDeltaPct: 0,
+    volumeDelta: 0,
+    intervalTurnover: 0,
+    volumePace: 0,
+    rvol10,
+    closeLocation,
+    hodDistancePct,
+    newHod: regime.fresh10dHigh,
+    velocity1mPct: deep.velocity1mPct,
+    velocity3mPct: deep.velocity3mPct,
+    relativeStrengthPct: deep.relativeStrengthPct,
     positiveIntervals5: deep.positiveIntervals5,
     higherLow: deep.higherLow,
     compressionPct: deep.compressionPct,
