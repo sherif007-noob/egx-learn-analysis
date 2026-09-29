@@ -20,6 +20,8 @@
     "MIN_MINUTE_TURNOVER_EGP": "120000",
     "MIN_VOLUME_SHARES": "100000",
     "HISTORY_MINUTES": "5",
+    "RAPIDAPI_ENABLED": "false",
+    "RAPIDAPI_TIMEOUT_MS": "5000",
     "SUPABASE_URL": "https://jhubsrbfiqjxdgngnwaq.supabase.co"
   },
   "durable_objects": {
