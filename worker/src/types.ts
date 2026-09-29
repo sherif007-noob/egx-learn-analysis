@@ -49,6 +49,7 @@ export type DeepMetrics = {
 };
 
 export type SignalStage = 'WATCH' | 'TRIGGERING' | 'BREAKOUT';
+export type DetectionLane = 'LIVE' | 'SESSION' | 'REGIME';
 
 export type RegimePhase = 'NORMAL' | 'ABNORMAL' | 'ACCELERATING' | 'SELF_REINFORCING';
 export type RegimeConfidence = 'BOOTSTRAP' | 'PARTIAL' | 'MATURE';
@@ -86,6 +87,7 @@ export type LiveSignal = {
   name: string;
   sector: string;
   stage: SignalStage;
+  detectionLane?: DetectionLane;
   score: number;
   close: number;
   changePct: number;
