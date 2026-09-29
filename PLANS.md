@@ -477,3 +477,29 @@ Next:
 4. add relative strength versus EGX70/EGX100,
 5. add 1m/3m/VWAP/deep-shortlist logic,
 6. later add Depth/Trades only through a reliable data feed.
+
+
+## Live Radar Phase 2 — completed
+
+Added on `feature/cloudflare-live-radar`:
+
+- rolling 5-minute per-symbol snapshot history,
+- 1m and 3m velocity,
+- relative strength vs median EGX stock,
+- live market breadth and regime classification,
+- positive-interval persistence,
+- micro higher-low detection,
+- 2-minute compression,
+- risk-off relative-strength bonus / weak-tape penalty,
+- Supabase persistence for runs, signal history, and latest ticker state.
+
+Supabase tables created and migration committed:
+- `live_radar_runs`
+- `live_radar_signals`
+- `live_radar_latest`
+
+Next after production data is collected:
+- forward-return / MFE / MAE calibration,
+- tune alert thresholds by time of day,
+- add richer opening-range and pullback/reclaim states,
+- order-flow Depth/Trades integration only when a reliable feed is available.
