@@ -15,6 +15,7 @@ import { fetchEgyptScanner } from './scanner';
 import {
   configureTelegramBot,
   deriveTelegramWebhookSecret,
+  formatFeedTestResult,
   formatLiveScanResult,
   formatManualScanResult,
   formatRadarStatus,
@@ -101,6 +102,80 @@ async function handleTelegramCommand(update: any, env: RadarEnv): Promise<void> 
 
   const rawCommand = text.split(/\s+/)[0]?.toLowerCase() || '';
   const command = rawCommand.split('@')[0];
+
+  if (command === '/feedtest') {
+    const parts = text.split(/\s+/).filter(Boolean);
+    const symbol = String(parts[1] || '').trim().toUpperCase();
+
+    if (!symbol) {
+      await sendTelegramMessage(
+        env,
+        chatId,
+        '🧪 استخدم الأمر بالشكل ده:\n<code>/feedtest BIOC</code>\n\nهيقارن RapidAPI مع TradingView ويعرض أول 5 مستويات Level II.',
+      );
+      return;
+    }
+
+    if (!rapidApiEnabled(env) || !rapidApiConfigured(env)) {
+      await sendTelegramMessage(
+        env,
+        chatId,
+        '❌ RapidAPI feed لسه مش configured. محتاج RAPIDAPI_KEY + RAPIDAPI_HOST في Cloudflare runtime settings.',
+      );
+      return;
+    }
+
+    await sendTelegramMessage(
+      env,
+      chatId,
+      `🧪 <b>بعمل live feed test لـ${symbol}...</b>\nRapidAPI quote + Level II + TradingView comparison`,
+    );
+
+    try {
+      const [rapid, tradingView] = await Promise.all([
+        fetchRapidValidationSample(env, symbol, 5),
+        fetchEgyptScanner(),
+      ]);
+
+      const tv = tradingView.rows.find((row) => row.ticker === symbol) || null;
+      const rapidLast = rapid?.quote?.last;
+      const tvClose = tv?.close;
+      const priceDiff = rapidLast !== null && rapidLast !== undefined
+        && tvClose !== null && tvClose !== undefined
+        ? Number(rapidLast) - Number(tvClose)
+        : null;
+      const priceDiffPct = priceDiff !== null && tvClose && tvClose > 0
+        ? (priceDiff / tvClose) * 100
+        : null;
+
+      await sendTelegramMessage(env, chatId, formatFeedTestResult({
+        symbol,
+        sampledAt: new Date().toISOString(),
+        rapidApi: rapid,
+        tradingView: tv
+          ? {
+              close: tv.close,
+              changePct: tv.changePct,
+              volume: tv.volume,
+              high: tv.high,
+              low: tv.low,
+            }
+          : null,
+        comparison: {
+          priceDiff,
+          priceDiffPct,
+          rapidDataAgeMs: rapid?.quote?.dataAgeMs ?? null,
+        },
+      }));
+    } catch (error) {
+      await sendTelegramMessage(
+        env,
+        chatId,
+        `❌ <b>Feed test failed</b>\n${String(error instanceof Error ? error.message : error)}`,
+      );
+    }
+    return;
+  }
 
   if (command === '/live' || command === '/regime' || command === '/scan') {
     const label = command === '/live'
