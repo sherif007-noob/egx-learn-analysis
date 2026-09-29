@@ -183,3 +183,92 @@ export function buildSignal(
     reasons,
   };
 }
+
+
+export function buildSessionWatch(
+  row: ScannerRow,
+  deep: DeepMetrics,
+  market: MarketContext,
+  config: {
+    intervalSeconds: number;
+    minScore: number;
+    minDailyTurnover: number;
+    minVolumeShares: number;
+  },
+): LiveSignal | null {
+  if (
+    row.close === null ||
+    row.volume === null ||
+    row.high === null ||
+    row.turnover === null
+  ) return null;
+
+  if (row.turnover < config.minDailyTurnover || row.volume < config.minVolumeShares) {
+    return null;
+  }
+
+  const dailyChange = row.changePct ?? 0;
+  const rvol10 = row.rvol10 ?? 0;
+  const closeLocation = row.closeLocation ?? 0.5;
+  const hodDistancePct = row.high > 0 ? ((row.high - row.close) / row.high) * 100 : 100;
+  const relativeStrengthPct = deep.relativeStrengthPct;
+
+  // Session discovery is intentionally broader than the live trigger lane.
+  // It should surface a strong liquid name even while it is consolidating,
+  // so the trader can open Depth/Trades before the next acceleration.
+  if (dailyChange < 1.5) return null;
+  if (relativeStrengthPct < 1.0) return null;
+  if (closeLocation < 0.35 && hodDistancePct > 5) return null;
+
+  const liquidityScore = clamp((Math.log10(Math.max(row.turnover, 1)) - 7) / 2) * 20;
+  const momentumScore = clamp(dailyChange / 10) * 26;
+  const rvolScore = clamp((rvol10 - 0.7) / 2.3) * 16;
+  const locationScore = clamp((closeLocation - 0.25) / 0.75) * 10;
+  const hodScore = clamp((5 - hodDistancePct) / 5) * 10;
+  const rsScore = clamp(relativeStrengthPct / 5) * 15;
+
+  let score = liquidityScore + momentumScore + rvolScore + locationScore + hodScore + rsScore;
+  if (market.regime === 'RISK_ON') score += 2;
+  if (dailyChange >= 7) score += 4;
+  if (rvol10 >= 2) score += 3;
+
+  score = Math.max(0, Math.min(100, Math.round(score * 10) / 10));
+  const watchFloor = Math.max(62, config.minScore - 8);
+  if (score < watchFloor) return null;
+
+  const reasons = ['session leader'];
+  if (dailyChange >= 3) reasons.push(`day +${dailyChange.toFixed(2)}%`);
+  if (relativeStrengthPct >= 1.5) reasons.push(`RS +${relativeStrengthPct.toFixed(2)}pp vs market`);
+  if (rvol10 >= 1.3) reasons.push(`RVOL10 ${rvol10.toFixed(2)}x`);
+  if (hodDistancePct <= 2) reasons.push(`${hodDistancePct.toFixed(2)}% from HOD`);
+  if (closeLocation >= 0.7) reasons.push('holding upper 30% of day range');
+
+  return {
+    ticker: row.ticker,
+    name: row.name,
+    sector: row.sector,
+    stage: 'WATCH',
+    score,
+    close: row.close,
+    changePct: dailyChange,
+    intervalSeconds: Math.max(5, config.intervalSeconds),
+    priceDeltaPct: 0,
+    volumeDelta: 0,
+    intervalTurnover: 0,
+    volumePace: 0,
+    rvol10,
+    closeLocation,
+    hodDistancePct,
+    newHod: false,
+    velocity1mPct: deep.velocity1mPct,
+    velocity3mPct: deep.velocity3mPct,
+    relativeStrengthPct,
+    positiveIntervals5: deep.positiveIntervals5,
+    higherLow: deep.higherLow,
+    compressionPct: deep.compressionPct,
+    marketBreadthRatio: market.breadthRatio,
+    marketMedianChangePct: market.medianChangePct,
+    marketRegime: market.regime,
+    reasons,
+  };
+}
