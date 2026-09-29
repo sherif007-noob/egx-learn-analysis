@@ -255,7 +255,7 @@ export async function configureTelegramBot(
     drop_pending_updates: true,
   });
 
-  const commands = ['live', 'regime', 'scan', 'inspect', 'why', 'leaders', 'session', 'watch', 'watchlist', 'recap', 'terms', 'feedtest', 'status', 'help'];
+  const commands = ['live', 'regime', 'scan', 'inspect', 'why', 'leaders', 'session', 'watch', 'unwatch', 'watchlist', 'recap', 'terms', 'feedtest', 'status', 'help'];
   await telegramApi(env, 'setMyCommands', {
     commands: [
       { command: 'live', description: 'Intraday momentum scan (20s / session)' },
@@ -266,6 +266,7 @@ export async function configureTelegramBot(
       { command: 'leaders', description: 'Show current liquid market leaders' },
       { command: 'session', description: 'Explain the current market session' },
       { command: 'watch', description: 'Add a ticker to personal watchlist' },
+      { command: 'unwatch', description: 'Remove a ticker from personal watchlist' },
       { command: 'watchlist', description: 'Show personal watchlist' },
       { command: 'recap', description: 'Review today radar alerts and outcomes' },
       { command: 'terms', description: 'Beginner glossary for radar terms' },
