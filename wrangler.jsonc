@@ -18,7 +18,9 @@
     "MAX_CANDIDATES": "15",
     "MIN_DAILY_TURNOVER_EGP": "8000000",
     "MIN_MINUTE_TURNOVER_EGP": "120000",
-    "MIN_VOLUME_SHARES": "100000"
+    "MIN_VOLUME_SHARES": "100000",
+    "HISTORY_MINUTES": "5",
+    "SUPABASE_URL": "https://jhubsrbfiqjxdgngnwaq.supabase.co"
   },
   "durable_objects": {
     "bindings": [
