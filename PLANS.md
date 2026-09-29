@@ -7,7 +7,7 @@
 
 - **Maximum one new active trade.**
 - Primary watchlist: **TAQA + KORA**.
-- First backup: **CRST**. High-volatility backup: **RUBX**. Event-risk backup: **MAAL**. Last backup: **NAPR**.
+- First backup: **CRST**. Live momentum watch: **AFMC**. High-volatility backup: **RUBX**. Event-risk backup: **MAAL**. Last backup: **NAPR**.
 - **RKAZ = no-trade / observation only** unless live liquidity changes dramatically.
 - No averaging down in losing positions.
 - No market orders in fast/thin names.
@@ -38,8 +38,9 @@ Protected cash floor: ~**EGP 9,900 (15%)**
 ## Backups
 1. **CRST** — cleaner structure but lower recent relative volume
 2. **RUBX** — liquid but much more whipsaw-prone
-3. **MAAL** — high activity, but event/governance risk must be checked before the open
-4. **NAPR** — only on a clean reclaim setup
+3. **AFMC** — live momentum-rebound watch; prefer 144.00–144.50 hold/reclaim or acceptance through 145.50 rather than chasing thin offers
+4. **MAAL** — high activity, but event/governance risk must be checked before the open
+5. **NAPR** — only on a clean reclaim setup
 
 Do **not** choose the stock before the market gives the setup.
 
@@ -373,7 +374,7 @@ One-share tracking position. No action planned.
 
 # 11. Live reading checklist
 
-For **TAQA / KORA / CRST / RUBX / MAAL / NAPR / ACTF**, inspect in this order:
+For **TAQA / KORA / CRST / AFMC / RUBX / MAAL / NAPR / ACTF**, inspect in this order:
 
 1. **Where is price?** At a mapped support/resistance level or in the middle of nowhere?
 2. **Spread:** tight enough to enter/exit?
@@ -434,7 +435,7 @@ Do nothing.
 
 # 13. Data notes
 
-- CRST, NAPR, KORA, RKAZ, RUBX, TAQA, MAAL and the broader scanner shortlist now have standalone TradingView **1m** data in this repository.
+- CRST, NAPR, KORA, RKAZ, RUBX, TAQA, MAAL, AFMC and the broader scanner shortlist are part of the standalone TradingView **1m** research set in this repository.
 - KORA's previous incomplete 5m issue is no longer a blocker for analysis because the new standalone 1m fetch includes the full Sep 24 session.
 - RKAZ official-close representations differ between some feeds; use live session data rather than relying on the disputed prior close for execution.
 
