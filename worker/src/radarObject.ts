@@ -145,6 +145,7 @@ function emptyState(sessionDate = ''): RadarState {
     alerts: {},
     pendingEvaluations: [],
     latestSignals: [],
+    watchlist: [],
     market: emptyMarket(),
     lastUniverseCount: 0,
   };
@@ -432,6 +433,7 @@ export class RadarCoordinator {
       alerts: stored.alerts || {},
       pendingEvaluations: stored.pendingEvaluations || [],
       latestSignals: stored.latestSignals || [],
+      watchlist: stored.watchlist || [],
       market: stored.market || emptyMarket(),
     };
   }
@@ -460,9 +462,11 @@ export class RadarCoordinator {
 
     if (state.sessionDate !== clock.date) {
       const regimeHistory = state.regimeHistory || {};
+      const watchlist = state.watchlist || [];
       state = {
         ...emptyState(clock.date),
         regimeHistory,
+        watchlist,
       };
     }
 
@@ -648,6 +652,7 @@ export class RadarCoordinator {
       alerts: nextAlerts,
       pendingEvaluations: [...retainedExistingPending, ...newPending],
       latestSignals,
+      watchlist: state.watchlist || [],
       market,
       lastUniverseCount: totalCount,
     };
@@ -706,6 +711,31 @@ export class RadarCoordinator {
     }
 
     if (url.pathname === '/latest') return json(await this.readState());
+
+    if (url.pathname === '/watchlist') {
+      const state = await this.readState();
+
+      if (request.method === 'GET') {
+        return json({ watchlist: state.watchlist || [] });
+      }
+
+      const symbol = String(url.searchParams.get('symbol') || '').trim().toUpperCase();
+      if (!/^[A-Z0-9._-]{1,24}$/.test(symbol)) {
+        return json({ error: 'valid symbol is required' }, 400);
+      }
+
+      if (request.method === 'POST') {
+        const watchlist = Array.from(new Set([...(state.watchlist || []), symbol])).slice(0, 50);
+        await this.writeState({ ...state, watchlist });
+        return json({ ok: true, added: symbol, watchlist });
+      }
+
+      if (request.method === 'DELETE') {
+        const watchlist = (state.watchlist || []).filter((item) => item !== symbol);
+        await this.writeState({ ...state, watchlist });
+        return json({ ok: true, removed: symbol, watchlist });
+      }
+    }
 
     if (url.pathname === '/reset' && request.method === 'POST') {
       await this.ctx.storage.deleteAll();
