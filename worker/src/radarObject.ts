@@ -1,5 +1,5 @@
 import { fetchEgyptScanner } from './scanner';
-import { buildSignal, toSnapshot } from './signal';
+import { buildSessionWatch, buildSignal, toSnapshot } from './signal';
 import {
   persistAlertEvents,
   persistAlertOutcomes,
@@ -467,19 +467,32 @@ export class RadarCoordinator {
       nextHistory[row.ticker] = trimHistory([...oldHistory, currentPoint], now, cfg.historyMinutes);
 
       const previous = state.previous[row.ticker];
-      if (!previous) continue;
-      if (snapshot.volume < previous.volume) continue;
-
       const deep = computeDeepMetrics(oldHistory, currentPoint, market);
 
-      const signal = buildSignal(row, previous, deep, market, {
-        intervalSeconds,
-        minScore: cfg.minScore,
-        triggerScore: cfg.triggerScore,
-        minDailyTurnover: cfg.minDailyTurnover,
-        minMinuteTurnover: cfg.minMinuteTurnover,
-        minVolumeShares: cfg.minVolumeShares,
-      });
+      let signal: LiveSignal | null = null;
+
+      if (previous && snapshot.volume >= previous.volume) {
+        signal = buildSignal(row, previous, deep, market, {
+          intervalSeconds,
+          minScore: cfg.minScore,
+          triggerScore: cfg.triggerScore,
+          minDailyTurnover: cfg.minDailyTurnover,
+          minMinuteTurnover: cfg.minMinuteTurnover,
+          minVolumeShares: cfg.minVolumeShares,
+        });
+      }
+
+      // Fallback discovery lane: strong liquid session leaders should remain
+      // visible even when the latest 20-second window is quiet or this is the
+      // first scan after deployment.
+      if (!signal) {
+        signal = buildSessionWatch(row, deep, market, {
+          intervalSeconds,
+          minScore: cfg.minScore,
+          minDailyTurnover: cfg.minDailyTurnover,
+          minVolumeShares: cfg.minVolumeShares,
+        });
+      }
 
       if (signal) signals.push(signal);
     }
