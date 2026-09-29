@@ -1,7 +1,7 @@
 # EGX Day-Trading Market Scan
 
-Generated: 2026-09-27T00:52:14.111Z  
-Universe returned by TradingView Egypt scanner: 296
+Generated: 2026-09-29T21:00:19.216Z  
+Universe returned by TradingView Egypt scanner: 295
 
 ## What the score means
 The score is a **shortlisting tool, not a buy signal**. It weights:
@@ -17,73 +17,73 @@ Names marked **thin** are penalized and excluded from the main shortlist.
 ## Top 25 tradable candidates
 | Ticker | Score | Close | Chg% | RVOL10 | Turnover EGP | Range% | Close loc | RSI | Flags |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| OFH | 90 | 1.02 | -6.42 | 4.43 | 412,235,672 | 11.76 | 33% | 50.9 | high-turnover, rvol>=2, wide-range |
-| RUBX | 87.5 | 17.65 | 4.19 | 3.53 | 302,117,397 | 14.33 | 63% | 70.8 | high-turnover, rvol>=2, wide-range |
-| MAAL | 82.2 | 10.7 | 4.39 | 4.92 | 85,224,558 | 11.68 | 57% | 71.8 | high-turnover, rvol>=2, wide-range |
-| SWDY | 81 | 118.5 | -4.44 | 3.61 | 147,143,820 | 7.16 | 24% | 42 | high-turnover, rvol>=2, wide-range |
-| TAQA | 78.1 | 17.12 | 2.51 | 2.77 | 241,913,578 | 5.55 | 81% | 64 | high-turnover, rvol>=2, wide-range, strong-close |
-| KORA | 76.9 | 6.7 | 8.24 | 0.55 | 357,788,589 | 12.24 | 100% | 62 | high-turnover, wide-range, high-momentum, strong-close |
-| EGS370O1C013 | 75.5 | 52.17 | 3.31 | 1.8 | 131,603,312 | 13.99 | 23% | 85.9 | high-turnover, rvol>=1.2, wide-range |
-| GIHD | 74.5 | 76.49 | 2.75 | 4.42 | 94,122,245 | 7.43 | 61% | 64.5 | high-turnover, rvol>=2, wide-range |
-| FWRY | 71.6 | 18.75 | -0.79 | 1.74 | 137,268,413 | 8 | 83% | 41.4 | high-turnover, rvol>=1.2, wide-range, strong-close |
-| OIH | 71.3 | 2.11 | -2.76 | 2.52 | 247,969,544 | 5.21 | 45% | 60.5 | high-turnover, rvol>=2, wide-range |
-| CERA | 69.1 | 1.3 | -3.7 | 1.2 | 149,805,387 | 6.92 | 11% | 41.1 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| ACAMD | 67.6 | 1.94 | -2.02 | 1.96 | 73,500,875 | 5.15 | 0% | 32.2 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| ARAB | 67.5 | 0.22 | -5.11 | 1.41 | 72,595,393 | 7.62 | 18% | 30.4 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| TYCN | 65.2 | 12.92 | -7.78 | 1.85 | 13,152,315 | 11.38 | 7% | 35.9 | liquid, rvol>=1.2, wide-range, high-momentum, weak-close |
-| ACTF | 65 | 2.83 | -4.39 | 0.86 | 133,411,308 | 7.77 | 27% | 51.7 | high-turnover, wide-range |
-| EGTS | 63.9 | 18.1 | -0.98 | 2.28 | 88,527,444 | 5.91 | 47% | 56.7 | high-turnover, rvol>=2, wide-range |
-| GBCO | 63.8 | 30.62 | -1.58 | 0.92 | 73,206,204 | 13.68 | 86% | 51.9 | high-turnover, wide-range, strong-close |
-| ADIB | 63.6 | 51 | -1.58 | 1.81 | 120,754,026 | 5.67 | 69% | 42.4 | high-turnover, rvol>=1.2, wide-range |
-| EGCH | 63.1 | 14.2 | 2.16 | 1.68 | 176,148,629 | 3.38 | 75% | 55.2 | high-turnover, rvol>=1.2 |
-| NHPS | 62.8 | 77.71 | -5.27 | 1.99 | 30,284,520 | 6.76 | 4% | 42.9 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| INFI | 62.6 | 127.89 | 3.84 | 2.64 | 29,700,150 | 8.36 | 52% | 39.4 | high-turnover, rvol>=2, wide-range |
-| ADPC | 62.5 | 3.75 | -5.54 | 1.42 | 26,512,928 | 7.2 | 0% | 38.5 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| BTFH | 62.3 | 2.82 | -2.08 | 1.66 | 132,000,562 | 3.9 | 27% | 33.4 | high-turnover, rvol>=1.2 |
-| JUFO | 61.6 | 25.98 | -3.17 | 2.71 | 35,588,989 | 5.12 | 36% | 39.4 | high-turnover, rvol>=2, wide-range |
-| ADRI | 61.4 | 12.76 | -0.85 | 1.65 | 52,805,269 | 6.66 | 87% | 71 | high-turnover, rvol>=1.2, wide-range, strong-close |
+| GTWL | 98.2 | 151.96 | -20 | 5.3 | 378,032,867 | 31.53 | 0% | 27.6 | high-turnover, rvol>=2, wide-range, high-momentum, weak-close |
+| BIOC | 92.5 | 268.03 | 15.25 | 4.37 | 138,359,498 | 15.83 | 84% | 43.1 | high-turnover, rvol>=2, wide-range, high-momentum, strong-close |
+| SIPC | 84.1 | 5 | 15.47 | 2.1 | 49,268,465 | 13.4 | 100% | 45.9 | high-turnover, rvol>=2, wide-range, high-momentum, strong-close |
+| CRST | 82.9 | 2.48 | -20 | 1.04 | 201,278,025 | 28.63 | 0% | 34.5 | high-turnover, wide-range, high-momentum, weak-close |
+| AFMC | 78.1 | 147.05 | 8.37 | 3.11 | 43,627,235 | 14.16 | 67% | 39.8 | high-turnover, rvol>=2, wide-range, high-momentum |
+| HBCO | 75.8 | 7.71 | -8.87 | 1.49 | 54,480,279 | 16.47 | 4% | 42.9 | high-turnover, rvol>=1.2, wide-range, high-momentum, weak-close |
+| GPIM | 74.6 | 1.66 | 7.1 | 2.63 | 29,649,790 | 8.43 | 79% | 64.4 | high-turnover, rvol>=2, wide-range, high-momentum |
+| OCDI | 69.7 | 25.01 | -6.15 | 1.33 | 63,122,539 | 11.92 | 17% | 23.4 | high-turnover, rvol>=1.2, wide-range, weak-close |
+| SWDY | 66.5 | 108 | -4 | 1.78 | 77,335,344 | 6.37 | 3% | 30.2 | high-turnover, rvol>=1.2, wide-range, weak-close |
+| LUTS | 65.6 | 0.82 | 0.12 | 1.32 | 77,567,995 | 9.39 | 23% | 46.9 | high-turnover, rvol>=1.2, wide-range |
+| ZMID | 65.2 | 7.37 | -5.87 | 0.61 | 76,187,095 | 8.55 | 11% | 29.3 | high-turnover, wide-range, weak-close |
+| NIPH | 64.9 | 303.61 | 1.77 | 1.31 | 163,529,811 | 7.79 | 22% | 43.1 | high-turnover, rvol>=1.2, wide-range |
+| RUBX | 64.8 | 14.19 | -6.27 | 0.48 | 48,269,641 | 9.8 | 2% | 50.2 | high-turnover, wide-range, weak-close |
+| MILS | 64.4 | 180.14 | 4.95 | 2.59 | 16,892,989 | 16.57 | 28% | 39.9 | liquid, rvol>=2, wide-range |
+| PHAR | 63.9 | 108 | 2.27 | 2.14 | 142,698,780 | 5 | 44% | 35 | high-turnover, rvol>=2, wide-range |
+| OIH | 63 | 1.8 | -3.23 | 1.08 | 113,425,326 | 6.11 | 18% | 31.5 | high-turnover, wide-range, weak-close |
+| AMER | 62.6 | 4.29 | -5.3 | 0.92 | 34,504,753 | 10.26 | 18% | 32 | high-turnover, wide-range, weak-close |
+| MPCI | 61.6 | 339 | -2.22 | 1.2 | 113,174,133 | 7.37 | 16% | 31 | high-turnover, wide-range, weak-close |
+| KORA | 61 | 6.01 | 0.17 | 0.79 | 371,936,218 | 6.32 | 16% | 53.9 | high-turnover, wide-range, weak-close |
+| POUL | 60.4 | 9.8 | 0.93 | 1.5 | 42,379,238 | 7.45 | 12% | 9.5 | high-turnover, rvol>=1.2, wide-range, weak-close |
+| SKPC | 60.3 | 15.82 | -2.35 | 1.24 | 96,940,689 | 3.86 | 0% | 28.7 | high-turnover, rvol>=1.2, weak-close |
+| MPCO | 59.7 | 2.39 | -0.42 | 0.68 | 112,433,831 | 7.95 | 26% | 47.2 | high-turnover, wide-range |
+| TYCN | 59.7 | 13 | -6.27 | 1.42 | 16,167,268 | 18.85 | 20% | 42.5 | liquid, rvol>=1.2, wide-range |
+| CERA | 57.9 | 1.2 | -4 | 0.61 | 58,593,134 | 7.5 | 22% | 36.7 | high-turnover, wide-range |
+| EAST | 57.9 | 28.65 | -4.18 | 1.14 | 48,775,307 | 6.21 | 8% | 11.3 | high-turnover, wide-range, weak-close |
 
 ## Strong-close momentum candidates
 Positive session + close in the upper 30% of the day's range.
 
 | Ticker | Score | Close | Chg% | RVOL10 | Turnover EGP | Range% | Close loc | RSI | Flags |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| TAQA | 78.1 | 17.12 | 2.51 | 2.77 | 241,913,578 | 5.55 | 81% | 64 | high-turnover, rvol>=2, wide-range, strong-close |
-| KORA | 76.9 | 6.7 | 8.24 | 0.55 | 357,788,589 | 12.24 | 100% | 62 | high-turnover, wide-range, high-momentum, strong-close |
-| EGCH | 63.1 | 14.2 | 2.16 | 1.68 | 176,148,629 | 3.38 | 75% | 55.2 | high-turnover, rvol>=1.2 |
-| CRST | 59.6 | 3.72 | 3.91 | 0.54 | 191,945,367 | 4.57 | 82% | 61.7 | high-turnover, strong-close |
-| PHDC | 59.4 | 13.5 | 0.3 | 0.85 | 97,565,742 | 5.85 | 100% | 33.4 | high-turnover, wide-range, strong-close |
-| AIFI | 58.5 | 2.33 | 4.02 | 1.35 | 10,453,405 | 11.59 | 96% | 48 | liquid, rvol>=1.2, wide-range, strong-close |
-| ORHD | 58.1 | 40.67 | 0.42 | 0.95 | 185,673,883 | 4.67 | 83% | 41.8 | high-turnover, strong-close |
-| EEII | 55.3 | 2.33 | 1.75 | 1.78 | 15,981,864 | 7.3 | 76% | 50.6 | liquid, rvol>=1.2, wide-range |
-| MICH | 54.7 | 48.38 | 2.87 | 1.97 | 18,510,623 | 5.97 | 90% | 49.6 | liquid, rvol>=1.2, wide-range, strong-close |
-| EMFD | 49.6 | 13.4 | 0.07 | 0.84 | 69,264,855 | 3.36 | 89% | 48.5 | high-turnover, strong-close |
-| COMI | 48.7 | 128.2 | 0.08 | 0.83 | 562,254,560 | 1.5 | 72% | 30 | high-turnover |
-| INEG | 48.5 | 0.7 | 1.6 | 0.66 | 28,519,847 | 6.71 | 72% | 67.7 | high-turnover, wide-range |
-| EGS3I0S1C019 | 47.8 | 7.32 | 0.27 | 1.3 | 41,262,042 | 3.01 | 77% | 52.3 | high-turnover, rvol>=1.2 |
-| ICID | 46.8 | 17.92 | 5.41 | 1.04 | 6,599,112 | 7.92 | 99% | 59.7 | wide-range, strong-close |
-| KZPC | 46.3 | 13.9 | 1.46 | 1.21 | 19,497,530 | 5.04 | 86% | 60 | liquid, rvol>=1.2, wide-range, strong-close |
+| BIOC | 92.5 | 268.03 | 15.25 | 4.37 | 138,359,498 | 15.83 | 84% | 43.1 | high-turnover, rvol>=2, wide-range, high-momentum, strong-close |
+| SIPC | 84.1 | 5 | 15.47 | 2.1 | 49,268,465 | 13.4 | 100% | 45.9 | high-turnover, rvol>=2, wide-range, high-momentum, strong-close |
+| GPIM | 74.6 | 1.66 | 7.1 | 2.63 | 29,649,790 | 8.43 | 79% | 64.4 | high-turnover, rvol>=2, wide-range, high-momentum |
+| MASR | 54.9 | 7.3 | 3.99 | 0.97 | 57,723,436 | 4.66 | 82% | 40 | high-turnover, strong-close |
+| AMOC | 54.8 | 13.5 | 2.9 | 0.89 | 92,576,007 | 3.04 | 93% | 59.4 | high-turnover, strong-close |
+| AIH | 50.1 | 0.69 | 6.02 | 0.56 | 15,183,237 | 7.86 | 72% | 48.9 | liquid, wide-range |
+| ACAMD | 49.9 | 2.03 | 3.05 | 0.94 | 45,504,064 | 3.94 | 75% | 46.7 | high-turnover |
+| MMAT | 49.4 | 5.17 | 4.87 | 3.12 | 2,145,069 | 4.64 | 100% | 100 | rvol>=2, strong-close |
+| ALCN | 44.8 | 33.8 | 4.22 | 0.55 | 22,174,321 | 4.67 | 94% | 57.9 | liquid, strong-close |
+| EFIH | 42.3 | 22.59 | 2.68 | 0.55 | 28,256,973 | 2.74 | 95% | 43.7 | high-turnover, strong-close |
+| TALM | 41.4 | 19.6 | 1.55 | 0.46 | 30,366,790 | 3.83 | 77% | 48.4 | high-turnover |
+| ACGC | 40.8 | 13.95 | 2.95 | 0.62 | 13,453,659 | 4.37 | 98% | 52 | liquid, strong-close |
+| INEG | 39.4 | 0.68 | 3.18 | 0.49 | 12,610,830 | 4.11 | 75% | 60.7 | liquid |
+| BINV | 36.1 | 57.92 | 3.43 | 0.32 | 10,717,806 | 5.96 | 70% | 62.3 | liquid, wide-range |
+| ICID | 35.8 | 17.6 | 1.79 | 0.89 | 6,056,618 | 4.83 | 100% | 56.5 | strong-close |
 
 ## Wide-range / failed-move candidates
 Large range + close in the lower 35% of the day's range. These can be useful for reclaim/reversal setups, but are not automatic longs.
 
 | Ticker | Score | Close | Chg% | RVOL10 | Turnover EGP | Range% | Close loc | RSI | Flags |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| OFH | 90 | 1.02 | -6.42 | 4.43 | 412,235,672 | 11.76 | 33% | 50.9 | high-turnover, rvol>=2, wide-range |
-| SWDY | 81 | 118.5 | -4.44 | 3.61 | 147,143,820 | 7.16 | 24% | 42 | high-turnover, rvol>=2, wide-range |
-| EGS370O1C013 | 75.5 | 52.17 | 3.31 | 1.8 | 131,603,312 | 13.99 | 23% | 85.9 | high-turnover, rvol>=1.2, wide-range |
-| CERA | 69.1 | 1.3 | -3.7 | 1.2 | 149,805,387 | 6.92 | 11% | 41.1 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| ACAMD | 67.6 | 1.94 | -2.02 | 1.96 | 73,500,875 | 5.15 | 0% | 32.2 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| ARAB | 67.5 | 0.22 | -5.11 | 1.41 | 72,595,393 | 7.62 | 18% | 30.4 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| TYCN | 65.2 | 12.92 | -7.78 | 1.85 | 13,152,315 | 11.38 | 7% | 35.9 | liquid, rvol>=1.2, wide-range, high-momentum, weak-close |
-| ACTF | 65 | 2.83 | -4.39 | 0.86 | 133,411,308 | 7.77 | 27% | 51.7 | high-turnover, wide-range |
-| NHPS | 62.8 | 77.71 | -5.27 | 1.99 | 30,284,520 | 6.76 | 4% | 42.9 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| ADPC | 62.5 | 3.75 | -5.54 | 1.42 | 26,512,928 | 7.2 | 0% | 38.5 | high-turnover, rvol>=1.2, wide-range, weak-close |
-| DAPH | 60.8 | 104 | -4.6 | 1.81 | 33,024,680 | 8.55 | 28% | 36.5 | high-turnover, rvol>=1.2, wide-range |
-| ISPH | 59.4 | 11.67 | -2.91 | 1.37 | 86,126,852 | 5.14 | 28% | 32.5 | high-turnover, rvol>=1.2, wide-range |
-| TANM | 58.6 | 7.23 | -2.3 | 0.68 | 44,394,673 | 10.37 | 24% | 58.6 | high-turnover, wide-range |
-| SAUD | 56.6 | 23.29 | -5.25 | 1 | 25,770,315 | 9.49 | 24% | 46.5 | high-turnover, wide-range |
-| PRDC | 56.1 | 7.23 | -1.77 | 1.86 | 42,122,616 | 4.43 | 28% | 28.3 | high-turnover, rvol>=1.2 |
+| GTWL | 98.2 | 151.96 | -20 | 5.3 | 378,032,867 | 31.53 | 0% | 27.6 | high-turnover, rvol>=2, wide-range, high-momentum, weak-close |
+| CRST | 82.9 | 2.48 | -20 | 1.04 | 201,278,025 | 28.63 | 0% | 34.5 | high-turnover, wide-range, high-momentum, weak-close |
+| HBCO | 75.8 | 7.71 | -8.87 | 1.49 | 54,480,279 | 16.47 | 4% | 42.9 | high-turnover, rvol>=1.2, wide-range, high-momentum, weak-close |
+| OCDI | 69.7 | 25.01 | -6.15 | 1.33 | 63,122,539 | 11.92 | 17% | 23.4 | high-turnover, rvol>=1.2, wide-range, weak-close |
+| SWDY | 66.5 | 108 | -4 | 1.78 | 77,335,344 | 6.37 | 3% | 30.2 | high-turnover, rvol>=1.2, wide-range, weak-close |
+| LUTS | 65.6 | 0.82 | 0.12 | 1.32 | 77,567,995 | 9.39 | 23% | 46.9 | high-turnover, rvol>=1.2, wide-range |
+| ZMID | 65.2 | 7.37 | -5.87 | 0.61 | 76,187,095 | 8.55 | 11% | 29.3 | high-turnover, wide-range, weak-close |
+| NIPH | 64.9 | 303.61 | 1.77 | 1.31 | 163,529,811 | 7.79 | 22% | 43.1 | high-turnover, rvol>=1.2, wide-range |
+| RUBX | 64.8 | 14.19 | -6.27 | 0.48 | 48,269,641 | 9.8 | 2% | 50.2 | high-turnover, wide-range, weak-close |
+| MILS | 64.4 | 180.14 | 4.95 | 2.59 | 16,892,989 | 16.57 | 28% | 39.9 | liquid, rvol>=2, wide-range |
+| OIH | 63 | 1.8 | -3.23 | 1.08 | 113,425,326 | 6.11 | 18% | 31.5 | high-turnover, wide-range, weak-close |
+| AMER | 62.6 | 4.29 | -5.3 | 0.92 | 34,504,753 | 10.26 | 18% | 32 | high-turnover, wide-range, weak-close |
+| MPCI | 61.6 | 339 | -2.22 | 1.2 | 113,174,133 | 7.37 | 16% | 31 | high-turnover, wide-range, weak-close |
+| KORA | 61 | 6.01 | 0.17 | 0.79 | 371,936,218 | 6.32 | 16% | 53.9 | high-turnover, wide-range, weak-close |
+| POUL | 60.4 | 9.8 | 0.93 | 1.5 | 42,379,238 | 7.45 | 12% | 9.5 | high-turnover, rvol>=1.2, wide-range, weak-close |
 
 ## Next step
 Take the top 8–12 names and fetch 1-minute history. Then evaluate:
