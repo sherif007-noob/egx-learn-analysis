@@ -9,6 +9,7 @@ on:
       - 'worker/**'
       - 'wrangler.jsonc'
       - 'package.json'
+      - 'scripts/validateRegimeDetector.ts'
       - '.github/workflows/validate-live-radar.yml'
   workflow_dispatch:
 
