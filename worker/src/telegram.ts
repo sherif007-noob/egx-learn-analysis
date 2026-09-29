@@ -103,7 +103,7 @@ export async function configureTelegramBot(
     url: webhookUrl,
     secret_token: secretToken,
     allowed_updates: ['message'],
-    drop_pending_updates: false,
+    drop_pending_updates: true,
   });
 
   const commands = ['scan', 'status', 'help'];
