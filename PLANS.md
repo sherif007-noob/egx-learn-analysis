@@ -444,3 +444,36 @@ Do nothing.
 
 Previous working plan:
 - `plans/archive/2026-09-27.md`
+
+
+---
+
+# Live EGX Radar — Cloudflare implementation
+
+Status: **Phase 1 implemented on `feature/cloudflare-live-radar`**
+
+Implemented:
+- full TradingView Egypt universe scan,
+- Cloudflare Worker entrypoint,
+- one persistent Durable Object coordinator,
+- 20-second alarm-driven live polling during EGX session,
+- Cairo timezone/session gating,
+- live interval price/volume/turnover deltas,
+- volume pace versus 10-day average minute,
+- HOD proximity + new-HOD detection,
+- WATCH / TRIGGERING / BREAKOUT stages,
+- Telegram alert output,
+- alert cooldown/deduplication,
+- manual `/api/scan`, `/api/latest`, `/api/reset`, and `/health` endpoints,
+- Wrangler deployment config + Durable Object migration,
+- CI type-check and Wrangler dry-build.
+
+Deployment and tuning guide: `docs/LIVE_EGX_RADAR.md`.
+
+Next:
+1. deploy the Worker and add Telegram secrets,
+2. run forced scans to verify production access to TradingView,
+3. observe one full EGX session and collect false positives,
+4. add relative strength versus EGX70/EGX100,
+5. add 1m/3m/VWAP/deep-shortlist logic,
+6. later add Depth/Trades only through a reliable data feed.
