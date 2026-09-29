@@ -449,7 +449,7 @@ export class RadarCoordinator {
     }
   }
 
-  private async run(now: number, force = false) {
+  private async run(now: number, force = false, notify = true) {
     const cfg = getConfig(this.env);
 
     if (!cfg.enabled && !force) return { skipped: true, reason: 'RADAR_ENABLED=false' };
@@ -553,9 +553,11 @@ export class RadarCoordinator {
     const latestSignals = signals.slice(0, cfg.maxCandidates);
 
     const cooldownMs = cfg.cooldownMinutes * 60_000;
-    const alertsToSend = latestSignals.filter((signal) =>
-      shouldAlert(state.alerts[signal.ticker], signal, now, cooldownMs),
-    );
+    const alertsToSend = notify
+      ? latestSignals.filter((signal) =>
+          shouldAlert(state.alerts[signal.ticker], signal, now, cooldownMs),
+        )
+      : [];
 
     const nextAlerts = { ...state.alerts };
     for (const signal of alertsToSend) {
@@ -713,11 +715,12 @@ export class RadarCoordinator {
 
     if (url.pathname === '/tick' && request.method === 'POST') {
       const force = url.searchParams.get('force') === '1';
+      const notify = url.searchParams.get('notify') !== '0';
       const scheduledAt = Number(url.searchParams.get('scheduledAt'));
       const tickAt = Number.isFinite(scheduledAt) && scheduledAt > 0 ? scheduledAt : Date.now();
 
       try {
-        return json(await this.run(tickAt, force));
+        return json(await this.run(tickAt, force, notify));
       } catch (error) {
         await this.ensureNextAlarm(Date.now(), cfg);
         return json({ error: error instanceof Error ? error.message : String(error) }, 502);
