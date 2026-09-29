@@ -31,6 +31,8 @@ export async function sendTelegramAlerts(env: RadarEnv, signals: LiveSignal[]): 
         `Price <b>${signal.close.toFixed(3)}</b> · Day ${signal.changePct >= 0 ? '+' : ''}${signal.changePct.toFixed(2)}%`,
         `${signal.intervalSeconds}s Δ ${signal.priceDeltaPct >= 0 ? '+' : ''}${signal.priceDeltaPct.toFixed(2)}% · Vol ${signal.volumeDelta.toLocaleString('en-US')} · EGP ${money(signal.intervalTurnover)}`,
         `Pace ${signal.volumePace.toFixed(1)}x · HOD gap ${signal.hodDistancePct.toFixed(2)}%`,
+        `1m ${signal.velocity1mPct >= 0 ? '+' : ''}${signal.velocity1mPct.toFixed(2)}% · 3m ${signal.velocity3mPct >= 0 ? '+' : ''}${signal.velocity3mPct.toFixed(2)}% · RS ${signal.relativeStrengthPct >= 0 ? '+' : ''}${signal.relativeStrengthPct.toFixed(2)}pp`,
+        `Market ${signal.marketRegime} · breadth ${(signal.marketBreadthRatio * 100).toFixed(0)}%`,
         `<i>${escapeHtml(reasons)}</i>`,
         'راقبه على الـDepth والـTrades — دي إشارة متابعة مش أمر شراء.',
       ].join('\n');
