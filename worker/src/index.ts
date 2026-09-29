@@ -1,3 +1,4 @@
+import { fetchCalibrationSummary, supabaseConfigured } from './supabase';
 import type { RadarEnv } from './types';
 
 function json(data: unknown, status = 200): Response {
@@ -40,6 +41,18 @@ export default {
 
     if (url.pathname === '/api/latest') {
       return coordinator(env).fetch('https://radar.internal/latest');
+    }
+
+    if (url.pathname === '/api/calibration' && request.method === 'GET') {
+      if (!supabaseConfigured(env)) {
+        return json({ error: 'Supabase calibration storage is not configured' }, 503);
+      }
+      try {
+        const rows = await fetchCalibrationSummary(env);
+        return json({ rows });
+      } catch (error) {
+        return json({ error: error instanceof Error ? error.message : String(error) }, 502);
+      }
     }
 
     if (url.pathname === '/api/scan' && (request.method === 'GET' || request.method === 'POST')) {
