@@ -102,6 +102,26 @@ function formatBeginnerAlert(signal: LiveSignal): string {
     `• <b>RS ${signal.relativeStrengthPct >= 0 ? '+' : ''}${signal.relativeStrengthPct.toFixed(2)} نقطة</b>: السهم أقوى/أضعف من متوسط حركة السوق بالمقدار ده؛ الموجب يعني أقوى من السوق.`,
   );
 
+  const regimeLines: string[] = [];
+  if (signal.regimePhase && signal.regimePhase !== 'NORMAL') {
+    const label = signal.regimePhase.toLowerCase().replace(/_/g, ' ');
+    regimeLines.push(
+      `🧭 <b>Momentum regime: ${escapeHtml(label)}</b> · score ${(signal.regimeScore ?? 0).toFixed(1)}/100 · ${escapeHtml(signal.regimeConfidence || 'BOOTSTRAP')}`,
+    );
+    if (signal.regimeReturn5dPct !== null && signal.regimeReturn5dPct !== undefined) {
+      regimeLines.push(`• 5-session move: <b>${signed(signal.regimeReturn5dPct)}</b>`);
+    }
+    if ((signal.regimeExplosiveDays5 ?? 0) > 0) {
+      regimeLines.push(`• Explosive days: <b>${signal.regimeExplosiveDays5}/5</b>`);
+    }
+    if ((signal.regimeConsecutiveStrongDays ?? 0) >= 2) {
+      regimeLines.push(`• Strong closes in a row: <b>${signal.regimeConsecutiveStrongDays}</b>`);
+    }
+    if ((signal.regimePriceMultiple10d ?? 0) >= 1.5) {
+      regimeLines.push(`• Price is <b>${signal.regimePriceMultiple10d?.toFixed(2)}x</b> its 10-session low`);
+    }
+  }
+
   const warnings: string[] = [];
   if (signal.changePct >= 10) {
     warnings.push('⚠️ السهم طالع أكتر من 10% في نفس الجلسة؛ خطر مطاردة السعر عالي جدًا.');
@@ -136,6 +156,7 @@ function formatBeginnerAlert(signal: LiveSignal): string {
     '',
     '<b>ليه الرادار اختاره؟</b>',
     ...why,
+    ...(regimeLines.length ? ['', '<b>Regime detector:</b>', ...regimeLines] : []),
     ...(warnings.length ? ['', '<b>خد بالك:</b>', ...warnings] : []),
     '',
     '<b>أعمل إيه دلوقتي كمبتدئ؟</b>',
