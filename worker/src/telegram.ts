@@ -255,12 +255,13 @@ export async function configureTelegramBot(
     drop_pending_updates: true,
   });
 
-  const commands = ['live', 'regime', 'scan', 'status', 'help'];
+  const commands = ['live', 'regime', 'scan', 'feedtest', 'status', 'help'];
   await telegramApi(env, 'setMyCommands', {
     commands: [
       { command: 'live', description: 'Intraday momentum scan (20s / session)' },
       { command: 'regime', description: 'Cross-session BIOC/TYCN-style regime scan' },
       { command: 'scan', description: 'Combined overview of all scan lanes' },
+      { command: 'feedtest', description: 'Temporary live feed + Level II comparison' },
       { command: 'status', description: 'Show latest radar state' },
       { command: 'help', description: 'Show available commands' },
     ],
@@ -398,6 +399,94 @@ export function formatRegimeScanResult(result: any): string {
   });
 }
 
+
+export function formatFeedTestResult(result: any): string {
+  const rapid = result?.rapidApi || {};
+  const quote = rapid?.quote || {};
+  const depth = rapid?.depth || {};
+  const summary = rapid?.summary || {};
+  const tv = result?.tradingView || null;
+  const derived = rapid?.derived || {};
+
+  const bids = Array.isArray(depth?.bids) ? depth.bids.slice(0, 5) : [];
+  const asks = Array.isArray(depth?.asks) ? depth.asks.slice(0, 5) : [];
+
+  const bidQty = bids.reduce((sum: number, row: any) => sum + Number(row?.quantity || 0), 0);
+  const askQty = asks.reduce((sum: number, row: any) => sum + Number(row?.quantity || 0), 0);
+  const bookTotal = bidQty + askQty;
+  const bidImbalance = bookTotal > 0 ? (bidQty / bookTotal) * 100 : null;
+
+  const levelRows = Array.from({ length: Math.max(bids.length, asks.length, 5) }, (_, index) => {
+    const bid = bids[index];
+    const ask = asks[index];
+
+    const bidText = bid
+      ? `${Number(bid.price).toFixed(3)} × ${Number(bid.quantity).toLocaleString('en-US')} (${Number(bid.orders || 0)}o)`
+      : '—';
+    const askText = ask
+      ? `${Number(ask.price).toFixed(3)} × ${Number(ask.quantity).toLocaleString('en-US')} (${Number(ask.orders || 0)}o)`
+      : '—';
+
+    return `${index + 1}) B ${bidText}\n   A ${askText}`;
+  });
+
+  const rapidLast = quote?.last === null || quote?.last === undefined
+    ? '—'
+    : Number(quote.last).toFixed(3);
+  const tvLast = tv?.close === null || tv?.close === undefined
+    ? '—'
+    : Number(tv.close).toFixed(3);
+  const priceDiffPct = result?.comparison?.priceDiffPct;
+  const ageMs = quote?.dataAgeMs;
+  const latencyMs = quote?.latencyMs;
+  const quota = quote?.quota || {};
+  const spreadPct = derived?.spreadPct;
+
+  const ageText = typeof ageMs === 'number'
+    ? ageMs < 1000
+      ? `${Math.round(ageMs)}ms`
+      : `${(ageMs / 1000).toFixed(1)}s`
+    : 'timestamp غير متاح';
+
+  const breadthTotal = Number(summary?.advancing || 0)
+    + Number(summary?.declining || 0)
+    + Number(summary?.unchanged || 0);
+
+  return [
+    `🧪 <b>Feed Test — ${escapeHtml(String(result?.symbol || quote?.symbol || '-'))}</b>`,
+    `Sample: <b>${escapeHtml(String(result?.sampledAt || rapid?.sampledAt || '-'))}</b>`,
+    '',
+    '<b>1) السعر: RapidAPI vs TradingView</b>',
+    `RapidAPI: <b>${rapidLast}</b> · Day ${quote?.changePct === null || quote?.changePct === undefined ? '—' : signed(Number(quote.changePct))}`,
+    `TradingView: <b>${tvLast}</b> · Day ${tv?.changePct === null || tv?.changePct === undefined ? '—' : signed(Number(tv.changePct))}`,
+    typeof priceDiffPct === 'number'
+      ? `الفرق: <b>${priceDiffPct >= 0 ? '+' : ''}${priceDiffPct.toFixed(2)}%</b> بالنسبة لـTradingView`
+      : 'الفرق: —',
+    `Rapid updated_at: <b>${escapeHtml(String(quote?.updatedAt || '—'))}</b>`,
+    `Data age: <b>${ageText}</b> · API latency: <b>${typeof latencyMs === 'number' ? `${latencyMs}ms` : '—'}</b>`,
+    '',
+    '<b>2) Level II — أول 5 مستويات</b>',
+    ...levelRows,
+    '',
+    `Best Bid: <b>${derived?.bestBid ? Number(derived.bestBid.price).toFixed(3) : '—'}</b> · Best Ask: <b>${derived?.bestAsk ? Number(derived.bestAsk.price).toFixed(3) : '—'}</b>`,
+    `Spread: <b>${typeof spreadPct === 'number' ? `${spreadPct.toFixed(3)}%` : '—'}</b>`,
+    `Top-5 Bid qty: <b>${bidQty.toLocaleString('en-US')}</b> · Ask qty: <b>${askQty.toLocaleString('en-US')}</b>`,
+    `Book imbalance: <b>${bidImbalance === null ? '—' : `${bidImbalance.toFixed(1)}% Bid / ${(100 - bidImbalance).toFixed(1)}% Ask`}</b>`,
+    '',
+    '<b>3) Market breadth من RapidAPI</b>',
+    breadthTotal > 0
+      ? `Adv <b>${Number(summary.advancing || 0)}</b> · Dec <b>${Number(summary.declining || 0)}</b> · Unchanged <b>${Number(summary.unchanged || 0)}</b>`
+      : 'Breadth غير متاح في الرد الحالي.',
+    '',
+    '<b>4) Free-tier diagnostics</b>',
+    `Requests remaining: <b>${escapeHtml(String(quota?.remaining ?? 'غير معلن'))}</b> / ${escapeHtml(String(quota?.limit ?? 'غير معلن'))}`,
+    `Reset: <b>${escapeHtml(String(quota?.reset ?? 'غير معلن'))}</b>`,
+    '',
+    '📱 <b>اختبار بكرة:</b> افتح نفس السهم على Telda/Thndr في نفس اللحظة وقارن Last + Best Bid/Ask + أول 5 مستويات.',
+    '⚠️ الـimbalance snapshot فقط؛ الأوردرات ممكن تتغير أو تتسحب ومش بنعتبره إشارة شراء.',
+  ].join('\n');
+}
+
 export function formatRadarStatus(state: RadarState): string {
   const signals = state.latestSignals || [];
   return [
@@ -419,6 +508,7 @@ export function telegramHelpText(): string {
     '⚡ /live — Intraday momentum: 20s velocity + volume + session leaders',
     '🧭 /regime — Multi-session regime detector: BIOC/TYCN-style abnormal momentum',
     '📡 /scan — Combined overview لكل الـscan lanes',
+    '🧪 /feedtest TICKER — اختبار مؤقت لـRapidAPI: السعر + Level II + مقارنة TradingView',
     '🛰 /status — آخر حالة وstate للـradar',
     '❓ /help — شرح الأوامر',
     '',
