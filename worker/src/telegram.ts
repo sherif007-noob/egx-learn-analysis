@@ -24,9 +24,10 @@ async function telegramApi(
   method: string,
   body: Record<string, unknown>,
 ): Promise<any> {
-  if (!env.TELEGRAM_BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN is not configured');
+  const botToken = env.TELEGRAM_BOT_TOKEN?.trim();
+  if (!botToken) throw new Error('TELEGRAM_BOT_TOKEN is not configured');
 
-  const response = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`, {
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
@@ -45,7 +46,7 @@ export async function sendTelegramMessage(
   text: string,
 ): Promise<void> {
   await telegramApi(env, 'sendMessage', {
-    chat_id: chatId,
+    chat_id: chatId.trim(),
     text,
     parse_mode: 'HTML',
     disable_web_page_preview: true,
@@ -88,7 +89,7 @@ export async function configureTelegramBot(
   env: RadarEnv,
   origin: string,
 ): Promise<{ webhookUrl: string; commands: string[] }> {
-  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+  if (!env.TELEGRAM_BOT_TOKEN?.trim() || !env.TELEGRAM_CHAT_ID?.trim()) {
     throw new Error('Telegram token/chat ID are not configured');
   }
   if (!env.ADMIN_TOKEN) {
@@ -116,7 +117,7 @@ export async function configureTelegramBot(
 
   await sendTelegramMessage(
     env,
-    String(env.TELEGRAM_CHAT_ID),
+    String(env.TELEGRAM_CHAT_ID).trim(),
     '✅ <b>EGX Live Radar connected</b>\nTelegram webhook is active. Try /scan now.',
   );
 
@@ -198,7 +199,7 @@ export function telegramHelpText(): string {
 }
 
 export async function sendTelegramAlerts(env: RadarEnv, signals: LiveSignal[]): Promise<void> {
-  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID || !signals.length) return;
+  if (!env.TELEGRAM_BOT_TOKEN?.trim() || !env.TELEGRAM_CHAT_ID?.trim() || !signals.length) return;
 
   const body = signals
     .slice(0, 5)
@@ -217,5 +218,5 @@ export async function sendTelegramAlerts(env: RadarEnv, signals: LiveSignal[]): 
     })
     .join('\n\n');
 
-  await sendTelegramMessage(env, env.TELEGRAM_CHAT_ID, body);
+  await sendTelegramMessage(env, env.TELEGRAM_CHAT_ID.trim(), body);
 }
