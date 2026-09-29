@@ -283,3 +283,43 @@ export async function fetchCalibrationSummary(env: RadarEnv): Promise<unknown[]>
 
   return await response.json() as unknown[];
 }
+
+
+export async function fetchSessionRecap(
+  env: RadarEnv,
+  sessionDate: string,
+): Promise<{ events: any[]; outcomes: any[] }> {
+  if (!supabaseConfigured(env)) return { events: [], outcomes: [] };
+
+  const safeDate = encodeURIComponent(sessionDate);
+  const eventsResponse = await request(
+    env,
+    `live_radar_alert_events?select=event_id,observed_at,ticker,name,stage,score,entry_price,change_pct,regime_phase,regime_score&session_date=eq.${safeDate}&order=observed_at.asc&limit=250`,
+    {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+    },
+  );
+  const events = await eventsResponse.json() as any[];
+
+  if (!events.length) return { events: [], outcomes: [] };
+
+  const eventIds = events
+    .map((event) => String(event.event_id || ''))
+    .filter(Boolean);
+
+  if (!eventIds.length) return { events, outcomes: [] };
+
+  const filter = encodeURIComponent(`(${eventIds.join(',')})`);
+  const outcomesResponse = await request(
+    env,
+    `live_radar_alert_outcomes?select=event_id,horizon_minutes,forward_return_pct,mfe_pct,mae_pct&event_id=in.${filter}&order=horizon_minutes.asc&limit=1000`,
+    {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+    },
+  );
+  const outcomes = await outcomesResponse.json() as any[];
+
+  return { events, outcomes };
+}
