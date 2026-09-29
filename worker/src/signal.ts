@@ -30,6 +30,7 @@ export function buildSignal(
   row: ScannerRow,
   previous: MinimalSnapshot,
   config: {
+    intervalSeconds: number;
     minScore: number;
     triggerScore: number;
     minDailyTurnover: number;
@@ -49,13 +50,19 @@ export function buildSignal(
     return null;
   }
 
+  const intervalSeconds = Math.max(5, config.intervalSeconds);
   const volumeDelta = Math.max(0, row.volume - previous.volume);
-  const minuteTurnover = volumeDelta * row.close;
-  if (minuteTurnover < config.minMinuteTurnover) return null;
+  const intervalTurnover = volumeDelta * row.close;
+  const intervalTurnoverFloor = config.minMinuteTurnover * (intervalSeconds / 60);
+  if (intervalTurnover < intervalTurnoverFloor) return null;
 
-  const priceDelta1mPct = pctDelta(row.close, previous.close);
+  const priceDeltaPct = pctDelta(row.close, previous.close);
+  const priceVelocityPerMinute = priceDeltaPct * (60 / intervalSeconds);
+
   const expectedMinuteVolume = Math.max(1, row.avgVol10 / 270);
-  const minuteVolumePace = volumeDelta / expectedMinuteVolume;
+  const expectedIntervalVolume = expectedMinuteVolume * (intervalSeconds / 60);
+  const volumePace = volumeDelta / Math.max(1, expectedIntervalVolume);
+
   const closeLocation = row.closeLocation ?? 0.5;
   const hodDistancePct = row.high > 0 ? ((row.high - row.close) / row.high) * 100 : 100;
   const newHod = row.high > previous.high + Math.max(0.001, previous.high * 0.00005);
@@ -63,8 +70,8 @@ export function buildSignal(
   const rvol10 = row.rvol10 ?? 0;
 
   const liquidityScore = clamp((Math.log10(Math.max(row.turnover, 1)) - 7) / 2) * 20;
-  const priceVelocityScore = clamp(Math.max(0, priceDelta1mPct) / 0.8) * 22;
-  const paceScore = clamp((minuteVolumePace - 0.8) / 3.2) * 22;
+  const priceVelocityScore = clamp(Math.max(0, priceVelocityPerMinute) / 0.8) * 22;
+  const paceScore = clamp((volumePace - 0.8) / 3.2) * 22;
   const locationScore = clamp((closeLocation - 0.5) / 0.5) * 12;
   const hodScore = clamp((0.8 - hodDistancePct) / 0.8) * 10;
   const dailyMomentumScore = clamp(Math.max(0, dailyChange) / 8) * 7;
@@ -78,21 +85,21 @@ export function buildSignal(
     + dailyMomentumScore
     + rvolScore;
 
-  if (newHod && priceDelta1mPct > 0) score += 5;
-  if (priceDelta1mPct < -0.15) score -= 12;
+  if (newHod && priceVelocityPerMinute > 0) score += 5;
+  if (priceVelocityPerMinute < -0.15) score -= 12;
   score = Math.max(0, Math.min(100, Math.round(score * 10) / 10));
 
   let stage: LiveSignal['stage'] | null = null;
   if (
     score >= config.triggerScore &&
-    priceDelta1mPct > 0 &&
-    minuteVolumePace >= 1.5 &&
+    priceVelocityPerMinute > 0 &&
+    volumePace >= 1.5 &&
     (newHod || hodDistancePct <= 0.35)
   ) {
-    stage = newHod && minuteVolumePace >= 2 ? 'BREAKOUT' : 'TRIGGERING';
+    stage = newHod && volumePace >= 2 ? 'BREAKOUT' : 'TRIGGERING';
   } else if (
     score >= config.minScore &&
-    priceDelta1mPct >= 0 &&
+    priceVelocityPerMinute >= 0 &&
     closeLocation >= 0.6
   ) {
     stage = 'WATCH';
@@ -101,9 +108,9 @@ export function buildSignal(
   if (!stage) return null;
 
   const reasons: string[] = [];
-  if (minuteVolumePace >= 2) reasons.push(`1m volume pace ${minuteVolumePace.toFixed(1)}x`);
-  else if (minuteVolumePace >= 1.3) reasons.push(`1m volume pace ${minuteVolumePace.toFixed(1)}x`);
-  if (priceDelta1mPct >= 0.15) reasons.push(`price +${priceDelta1mPct.toFixed(2)}%/min`);
+  if (volumePace >= 2) reasons.push(`volume pace ${volumePace.toFixed(1)}x`);
+  else if (volumePace >= 1.3) reasons.push(`volume pace ${volumePace.toFixed(1)}x`);
+  if (priceVelocityPerMinute >= 0.15) reasons.push(`velocity +${priceVelocityPerMinute.toFixed(2)}%/min`);
   if (newHod) reasons.push('new HOD');
   else if (hodDistancePct <= 0.35) reasons.push(`${hodDistancePct.toFixed(2)}% from HOD`);
   if (closeLocation >= 0.8) reasons.push('upper 20% of day range');
@@ -116,10 +123,11 @@ export function buildSignal(
     score,
     close: row.close,
     changePct: dailyChange,
-    priceDelta1mPct,
-    volumeDelta1m: volumeDelta,
-    minuteTurnover,
-    minuteVolumePace,
+    intervalSeconds,
+    priceDeltaPct,
+    volumeDelta,
+    intervalTurnover,
+    volumePace,
     rvol10,
     closeLocation,
     hodDistancePct,
