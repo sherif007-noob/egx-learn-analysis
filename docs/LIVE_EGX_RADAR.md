@@ -266,7 +266,7 @@ Persist radar outcomes and measure:
 
 The score should then be calibrated from actual EGX behavior rather than intuition alone.
 
-### Phase 4 — order flow
+### Phase 5 — order flow
 
 If a reliable depth/trades feed becomes available:
 
@@ -387,3 +387,122 @@ Do **not** auto-tune thresholds from a handful of observations. The intended wor
 4. then adjust `MIN_SCORE`, `TRIGGER_SCORE`, cooldown, and time-of-day rules.
 
 Until enough samples exist, the live score remains a discovery heuristic rather than a statistically calibrated probability.
+
+
+## Phase 4 — implemented: cross-session momentum regime detector
+
+The radar now has a second, slower layer whose job is different from the 20-second execution scanner:
+
+> detect when a stock stops behaving like a normal EGX name and enters a self-reinforcing momentum regime.
+
+It does **not** predict a final target such as BIOC 609 or TYCN 41.40. It detects the transition early enough to put the name on the screen before the late-stage move becomes obvious.
+
+### Regime phases
+
+Each stock is classified independently as:
+
+- **NORMAL** — no meaningful multi-session anomaly.
+- **ABNORMAL** — first ignition / unusual volume-price behavior.
+- **ACCELERATING** — abnormal behavior is compounding across sessions.
+- **SELF_REINFORCING** — repeated strong closes, explosive sessions, or multi-session compounding indicate a feedback-loop regime.
+
+The execution signal remains separate (`WATCH / TRIGGERING / BREAKOUT`). A stock can therefore be in a high momentum regime while the current 20-second tape is not an attractive entry.
+
+### Cross-session memory
+
+The Durable Object keeps up to 12 session snapshots per ticker across trading days. The memory is not cleared at the daily session rollover.
+
+For each ticker the detector measures:
+
+- 3-session return,
+- 5-session return,
+- 10-session return,
+- price multiple versus the rolling 10-session low,
+- number of >=15% explosive days in the latest 5 sessions,
+- number of >=18.5% limit-up-like days in the latest 5 sessions,
+- number of >=8% strong days in the latest 10 sessions,
+- consecutive strong / limit-up-like closes,
+- fresh 10-session high,
+- TradingView RVOL10,
+- current relative strength versus the market,
+- current close location in the daily range.
+
+A one-day ignition followed by a healthy consolidation is deliberately held in `ABNORMAL` rather than immediately forgotten. This is designed for the common pattern: ignition -> pause/pullback -> second acceleration.
+
+### Historical regression fixtures
+
+The detector is regression-tested against actual TradingView daily history previously pulled for BIOC and TYCN.
+
+**BIOC**
+
+- remained `NORMAL` through 2026-07-14,
+- switched to `ACCELERATING` on **2026-07-15 at 88.09**,
+- switched to `SELF_REINFORCING` on **2026-07-16 at 105.70**,
+- later reached an intraday high of 609 on 2026-08-11.
+
+The detector therefore identified the abnormal regime near the first true ignition, not after the several-hundred-percent move had already happened.
+
+**TYCN**
+
+- switched to `ABNORMAL` on **2026-06-07 at 15.70**,
+- stayed on the radar through the 2026-06-08 consolidation,
+- switched to `ACCELERATING` on **2026-06-09 at 18.62**,
+- switched to `SELF_REINFORCING` on **2026-06-14 at 23.96**,
+- later reached 41.40 on 2026-06-17.
+
+Regression command:
+
+```bash
+npm run radar:regime-check
+```
+
+CI runs this alongside TypeScript checking and the Cloudflare dry build.
+
+### Alert behavior
+
+All normal live signals are decorated with regime context. If the fast scanner is quiet but the cross-session detector sees an abnormal regime, a dedicated discovery lane can still emit a `WATCH`.
+
+Telegram displays:
+
+- regime phase,
+- regime score,
+- history confidence (`BOOTSTRAP / PARTIAL / MATURE`),
+- 5-session return when available,
+- explosive-day count,
+- consecutive strong closes,
+- 10-session price multiple when material.
+
+A regime upgrade bypasses the normal score-improvement cooldown so an `ABNORMAL -> ACCELERATING -> SELF_REINFORCING` transition can generate a fresh alert.
+
+### Persistence and calibration
+
+Queryable regime fields were added to:
+
+- `live_radar_signals`
+- `live_radar_latest`
+- `live_radar_alert_events`
+
+The aggregate view:
+
+- `live_radar_regime_calibration_summary`
+
+groups forward outcomes by regime phase, regime-score bucket, confidence level, and 5/10/20/30-minute horizon.
+
+Migrations:
+
+- `supabase/migrations/20260929210000_live_radar_regime_detector.sql`
+- `supabase/migrations/20260929211500_live_radar_regime_calibration_view.sql`
+
+Both migrations have been applied to the configured EGX Portfolio Supabase project.
+
+### Important interpretation
+
+`SELF_REINFORCING` means **the behavior is statistically/structurally abnormal**, not "buy now" and not "this will become the next BIOC".
+
+The intended workflow is:
+
+1. regime detector discovers the abnormal multi-session transition,
+2. live scanner watches current price/volume acceleration,
+3. Telegram surfaces the name early,
+4. live Depth + Trades confirms or rejects the execution setup,
+5. outcome calibration tells us later which regime patterns actually had edge.
