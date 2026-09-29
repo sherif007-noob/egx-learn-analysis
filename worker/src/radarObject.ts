@@ -1,16 +1,21 @@
 import { fetchEgyptScanner } from './scanner';
 import { buildSignal, toSnapshot } from './signal';
+import { persistRadarBatch } from './supabase';
 import { sendTelegramAlerts } from './telegram';
 import type {
   AlertState,
+  DeepMetrics,
+  HistoryPoint,
   LiveSignal,
+  MarketContext,
   RadarConfig,
   RadarEnv,
   RadarState,
+  ScannerRow,
   SignalStage,
 } from './types';
 
-const STATE_KEY = 'radar-state-v1';
+const STATE_KEY = 'radar-state-v2';
 const STAGE_RANK: Record<SignalStage, number> = {
   WATCH: 1,
   TRIGGERING: 2,
@@ -24,6 +29,11 @@ function num(value: string | undefined, fallback: number): number {
 
 function clamp(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(high, value));
+}
+
+function pctDelta(current: number, previous: number): number {
+  if (!Number.isFinite(previous) || previous <= 0) return 0;
+  return ((current - previous) / previous) * 100;
 }
 
 function getConfig(env: RadarEnv): RadarConfig {
@@ -40,6 +50,7 @@ function getConfig(env: RadarEnv): RadarConfig {
     minDailyTurnover: Math.max(0, num(env.MIN_DAILY_TURNOVER_EGP, 8_000_000)),
     minMinuteTurnover: Math.max(0, num(env.MIN_MINUTE_TURNOVER_EGP, 120_000)),
     minVolumeShares: Math.max(0, num(env.MIN_VOLUME_SHARES, 100_000)),
+    historyMinutes: clamp(Math.trunc(num(env.HISTORY_MINUTES, 5)), 3, 15),
   };
 }
 
@@ -73,15 +84,126 @@ function isTradingSession(epochMs: number, cfg: RadarConfig): boolean {
     && hhmm <= cfg.sessionEnd;
 }
 
+function emptyMarket(): MarketContext {
+  return {
+    advancers: 0,
+    decliners: 0,
+    unchanged: 0,
+    breadthRatio: 0.5,
+    medianChangePct: 0,
+    regime: 'MIXED',
+  };
+}
+
 function emptyState(sessionDate = ''): RadarState {
   return {
     updatedAt: new Date(0).toISOString(),
     sessionDate,
     lastRunAt: 0,
     previous: {},
+    history: {},
     alerts: {},
     latestSignals: [],
+    market: emptyMarket(),
     lastUniverseCount: 0,
+  };
+}
+
+function marketContext(rows: ScannerRow[]): MarketContext {
+  const changes = rows
+    .map((row) => row.changePct)
+    .filter((value): value is number => value !== null && Number.isFinite(value))
+    .sort((a, b) => a - b);
+
+  const advancers = changes.filter((x) => x > 0.01).length;
+  const decliners = changes.filter((x) => x < -0.01).length;
+  const unchanged = Math.max(0, changes.length - advancers - decliners);
+  const directional = advancers + decliners;
+  const breadthRatio = directional > 0 ? advancers / directional : 0.5;
+
+  let medianChangePct = 0;
+  if (changes.length) {
+    const mid = Math.floor(changes.length / 2);
+    medianChangePct = changes.length % 2
+      ? changes[mid]
+      : (changes[mid - 1] + changes[mid]) / 2;
+  }
+
+  const regime = breadthRatio >= 0.58
+    ? 'RISK_ON'
+    : breadthRatio <= 0.32
+      ? 'RISK_OFF'
+      : 'MIXED';
+
+  return {
+    advancers,
+    decliners,
+    unchanged,
+    breadthRatio,
+    medianChangePct,
+    regime,
+  };
+}
+
+function trimHistory(points: HistoryPoint[], now: number, historyMinutes: number): HistoryPoint[] {
+  const cutoff = now - historyMinutes * 60_000;
+  return points.filter((point) => point.at >= cutoff).slice(-60);
+}
+
+function referencePoint(points: HistoryPoint[], target: number): HistoryPoint | null {
+  if (!points.length) return null;
+  let best = points[0];
+  let bestDistance = Math.abs(points[0].at - target);
+
+  for (const point of points) {
+    const distance = Math.abs(point.at - target);
+    if (distance < bestDistance) {
+      best = point;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+function computeDeepMetrics(
+  points: HistoryPoint[],
+  current: HistoryPoint,
+  market: MarketContext,
+): DeepMetrics {
+  const all = [...points, current].sort((a, b) => a.at - b.at);
+  const oneMinute = referencePoint(all, current.at - 60_000);
+  const threeMinute = referencePoint(all, current.at - 180_000);
+
+  const velocity1mPct = oneMinute ? pctDelta(current.close, oneMinute.close) : 0;
+  const velocity3mPct = threeMinute ? pctDelta(current.close, threeMinute.close) : velocity1mPct;
+
+  const recent = all.slice(-6);
+  let positiveIntervals5 = 0;
+  for (let i = 1; i < recent.length; i += 1) {
+    if (recent[i].close > recent[i - 1].close) positiveIntervals5 += 1;
+  }
+
+  const last60 = all.filter((point) => point.at >= current.at - 60_000);
+  const prior60 = all.filter((point) =>
+    point.at >= current.at - 120_000 && point.at < current.at - 60_000
+  );
+
+  const recentLow = last60.length ? Math.min(...last60.map((x) => x.close)) : current.close;
+  const priorLow = prior60.length ? Math.min(...prior60.map((x) => x.close)) : recentLow;
+  const higherLow = prior60.length >= 2 && last60.length >= 2 && recentLow > priorLow;
+
+  const last120 = all.filter((point) => point.at >= current.at - 120_000);
+  const compressionPct = last120.length >= 2 && current.close > 0
+    ? ((Math.max(...last120.map((x) => x.close)) - Math.min(...last120.map((x) => x.close))) / current.close) * 100
+    : 99;
+
+  return {
+    velocity1mPct,
+    velocity3mPct,
+    relativeStrengthPct: current.changePct - market.medianChangePct,
+    positiveIntervals5,
+    higherLow,
+    compressionPct,
   };
 }
 
@@ -125,7 +247,6 @@ export class RadarCoordinator {
 
   private async ensureNextAlarm(now: number, cfg: RadarConfig): Promise<void> {
     if (!cfg.enabled || !isTradingSession(now, cfg)) return;
-
     const desired = now + cfg.pollSeconds * 1000;
     const current = await this.ctx.storage.getAlarm();
     if (current === null || current > desired + 3000) {
@@ -136,13 +257,8 @@ export class RadarCoordinator {
   private async run(now: number, force = false) {
     const cfg = getConfig(this.env);
 
-    if (!cfg.enabled && !force) {
-      return { skipped: true, reason: 'RADAR_ENABLED=false' };
-    }
-
-    if (!force && !isTradingSession(now, cfg)) {
-      return { skipped: true, reason: 'outside EGX session' };
-    }
+    if (!cfg.enabled && !force) return { skipped: true, reason: 'RADAR_ENABLED=false' };
+    if (!force && !isTradingSession(now, cfg)) return { skipped: true, reason: 'outside EGX session' };
 
     let state = await this.readState();
     const clock = cairoParts(now, cfg.timeZone);
@@ -156,34 +272,36 @@ export class RadarCoordinator {
 
     if (!force && sinceLastMs < duplicateFloorMs) {
       await this.ensureNextAlarm(now, cfg);
-      return {
-        skipped: true,
-        reason: 'duplicate tick',
-        nextPollSeconds: cfg.pollSeconds,
-      };
+      return { skipped: true, reason: 'duplicate tick', nextPollSeconds: cfg.pollSeconds };
     }
 
     const { rows, totalCount } = await fetchEgyptScanner();
+    const market = marketContext(rows);
 
     const intervalSeconds = state.lastRunAt > 0
       ? clamp((now - state.lastRunAt) / 1000, 5, 90)
       : cfg.pollSeconds;
 
     const nextPrevious: RadarState['previous'] = {};
+    const nextHistory: RadarState['history'] = {};
     const signals: LiveSignal[] = [];
 
     for (const row of rows) {
       const snapshot = toSnapshot(row);
       if (!snapshot) continue;
+
       nextPrevious[row.ticker] = snapshot;
+      const oldHistory = trimHistory(state.history[row.ticker] || [], now, cfg.historyMinutes);
+      const currentPoint: HistoryPoint = { ...snapshot, at: now };
+      nextHistory[row.ticker] = trimHistory([...oldHistory, currentPoint], now, cfg.historyMinutes);
 
       const previous = state.previous[row.ticker];
       if (!previous) continue;
-
-      // TradingView daily volume resets at the first print of a new session.
       if (snapshot.volume < previous.volume) continue;
 
-      const signal = buildSignal(row, previous, {
+      const deep = computeDeepMetrics(oldHistory, currentPoint, market);
+
+      const signal = buildSignal(row, previous, deep, market, {
         intervalSeconds,
         minScore: cfg.minScore,
         triggerScore: cfg.triggerScore,
@@ -217,8 +335,10 @@ export class RadarCoordinator {
       sessionDate: clock.date,
       lastRunAt: now,
       previous: nextPrevious,
+      history: nextHistory,
       alerts: nextAlerts,
       latestSignals,
+      market,
       lastUniverseCount: totalCount,
     };
 
@@ -234,6 +354,22 @@ export class RadarCoordinator {
       }
     }
 
+    let supabaseError: string | null = null;
+    try {
+      await persistRadarBatch(this.env, {
+        observedAt: nextState.updatedAt,
+        sessionDate: clock.date,
+        universeCount: totalCount,
+        intervalSeconds,
+        market,
+        signals: latestSignals,
+        alertedTickers: new Set(alertsToSend.map((signal) => signal.ticker)),
+      });
+    } catch (error) {
+      supabaseError = error instanceof Error ? error.message : String(error);
+      console.error(JSON.stringify({ type: 'supabase-error', supabaseError }));
+    }
+
     await this.ensureNextAlarm(now, cfg);
 
     return {
@@ -241,10 +377,13 @@ export class RadarCoordinator {
       atCairo: `${clock.date} ${clock.hms}`,
       intervalSeconds: Math.round(intervalSeconds * 10) / 10,
       universeCount: totalCount,
+      market,
       signalCount: latestSignals.length,
       alertsSelected: alertsToSend.length,
       telegramConfigured: Boolean(this.env.TELEGRAM_BOT_TOKEN && this.env.TELEGRAM_CHAT_ID),
+      supabaseConfigured: Boolean(this.env.SUPABASE_URL && this.env.SUPABASE_SERVICE_ROLE_KEY),
       telegramError,
+      supabaseError,
       nextPollSeconds: cfg.pollSeconds,
       signals: latestSignals,
     };
@@ -264,19 +403,19 @@ export class RadarCoordinator {
         tradingSession: isTradingSession(Date.now(), cfg),
         pollSeconds: cfg.pollSeconds,
         telegramConfigured: Boolean(this.env.TELEGRAM_BOT_TOKEN && this.env.TELEGRAM_CHAT_ID),
+        supabaseConfigured: Boolean(this.env.SUPABASE_URL && this.env.SUPABASE_SERVICE_ROLE_KEY),
         state: {
           updatedAt: state.updatedAt,
           sessionDate: state.sessionDate,
           lastUniverseCount: state.lastUniverseCount,
           signalCount: state.latestSignals.length,
+          market: state.market,
         },
         nextAlarm: await this.ctx.storage.getAlarm(),
       });
     }
 
-    if (url.pathname === '/latest') {
-      return json(await this.readState());
-    }
+    if (url.pathname === '/latest') return json(await this.readState());
 
     if (url.pathname === '/reset' && request.method === 'POST') {
       await this.ctx.storage.deleteAll();
@@ -287,15 +426,13 @@ export class RadarCoordinator {
     if (url.pathname === '/tick' && request.method === 'POST') {
       const force = url.searchParams.get('force') === '1';
       const scheduledAt = Number(url.searchParams.get('scheduledAt'));
-      const now = Number.isFinite(scheduledAt) && scheduledAt > 0 ? scheduledAt : Date.now();
+      const tickAt = Number.isFinite(scheduledAt) && scheduledAt > 0 ? scheduledAt : Date.now();
 
       try {
-        return json(await this.run(now, force));
+        return json(await this.run(tickAt, force));
       } catch (error) {
         await this.ensureNextAlarm(Date.now(), cfg);
-        return json({
-          error: error instanceof Error ? error.message : String(error),
-        }, 502);
+        return json({ error: error instanceof Error ? error.message : String(error) }, 502);
       }
     }
 
@@ -304,10 +441,8 @@ export class RadarCoordinator {
 
   async alarm(): Promise<void> {
     const cfg = getConfig(this.env);
-    const now = Date.now();
-
     try {
-      const result = await this.run(now, false);
+      const result = await this.run(Date.now(), false);
       console.log(JSON.stringify({ type: 'radar-alarm', ...result }));
     } catch (error) {
       console.error(JSON.stringify({
