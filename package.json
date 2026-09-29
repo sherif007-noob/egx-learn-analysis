@@ -8,7 +8,8 @@
     "scan:market": "tsx scripts/scanMarket.ts",
     "radar:dev": "wrangler dev --test-scheduled",
     "radar:deploy": "wrangler deploy",
-    "radar:tail": "wrangler tail"
+    "radar:tail": "wrangler tail",
+    "radar:regime-check": "tsx scripts/validateRegimeDetector.ts"
   },
   "dependencies": {
     "@ch99q/twc": "^0.1.4",
