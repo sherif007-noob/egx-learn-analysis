@@ -19,6 +19,134 @@ function stageEmoji(stage: LiveSignal['stage']): string {
   return '👀';
 }
 
+function stageArabic(stage: LiveSignal['stage']): string {
+  if (stage === 'BREAKOUT') return 'اختراق لحظي';
+  if (stage === 'TRIGGERING') return 'الإشارة بتتكوّن';
+  return 'فرصة متابعة';
+}
+
+function marketArabic(regime: LiveSignal['marketRegime']): string {
+  if (regime === 'RISK_ON') return 'السوق إيجابي نسبيًا';
+  if (regime === 'RISK_OFF') return 'السوق ضعيف نسبيًا';
+  return 'السوق مختلط';
+}
+
+function signed(value: number, digits = 2): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(digits)}%`;
+}
+
+function beginnerPlan(signal: LiveSignal): string[] {
+  if (signal.stage === 'BREAKOUT') {
+    return [
+      '1) <b>ما تجريش ورا السعر.</b> الاختراق حصل بالفعل والحركة ممكن تكون سريعة.',
+      '2) افتح <b>Depth + Trades</b>: عايزين نشوف عروض البيع بتتسحب/تتنفذ والسعر ثابت فوق منطقة الاختراق.',
+      '3) الأفضل للمبتدئ انتظار <b>ثبات أو pullback صغير ثم ارتداد</b> بدل الشراء في قمة شمعة سريعة.',
+      '4) لو السعر رجع تحت منطقة الاختراق بسرعة أو الشراء وقف يحرك السعر: تجاهل الفرصة.',
+      '5) لو فكرت تدخل، حدد الأول مستوى واضح يقول إن فكرتك غلط؛ من غير invalidation واضح مفيش صفقة.',
+    ];
+  }
+
+  if (signal.stage === 'TRIGGERING') {
+    return [
+      '1) افتح السهم دلوقتي وراقبه، لكن <b>لسه مش شراء تلقائي</b>.',
+      '2) راقب Depth + Trades لمدة دقيقة أو اتنين: هل التنفيذات على الـAsk بتزيد؟ وهل السعر بيتقدم فعلًا؟',
+      '3) عايزين نشوف السعر يثبت قرب المستوى الحالي أو يعمل تراجع صغير ويرجع يطلع.',
+      '4) لو الحجم عالي لكن السعر مش بيتحرك لفوق، ده ممكن يكون امتصاص بيع؛ ساعتها تجاهله.',
+      '5) أي دخول لازم يبقى بعد ما تعرف هتخرج فين لو السيناريو فشل.',
+    ];
+  }
+
+  return [
+    '1) <b>افتح السهم وراقبه فقط.</b> WATCH معناها يستحق الشاشة، مش معناها اشتري.',
+    '2) شوف آخر 1–3 دقائق: هل السعر ثابت/بيعمل قاع أعلى ولا الحركة بتفقد قوتها؟',
+    '3) راقب Depth + Trades: تنفيذات شراء حقيقية + تقدم في السعر أهم من شكل الـDepth لوحده.',
+    '4) استنى Trigger أو Breakout أنضج، أو pullback/reclaim واضح، بدل مطاردة الحركة.',
+    '5) لو الحركة رجعت بسرعة أو السبريد بقى واسع أو مفيش تقدم في السعر: تجاهل الفرصة.',
+  ];
+}
+
+function formatBeginnerAlert(signal: LiveSignal): string {
+  const intervalMinutes = Math.max(signal.intervalSeconds / 60, 1 / 60);
+  const velocityPerMinute = signal.priceDeltaPct / intervalMinutes;
+  const explanations: string[] = [];
+
+  explanations.push(
+    `• <b>Score ${signal.score.toFixed(1)}/100</b>: ترتيب داخلي للرادار لقوة النشاط الحالي، <u>مش</u> احتمال نجاح الصفقة.`,
+  );
+
+  explanations.push(
+    `• <b>Day ${signed(signal.changePct)}</b>: السهم متحرك بالنسبة لإقفال امبارح بالمقدار ده.`,
+  );
+
+  if (Math.abs(signal.priceDeltaPct) >= 0.05) {
+    explanations.push(
+      `• <b>${Math.round(signal.intervalSeconds)} ثانية: ${signed(signal.priceDeltaPct)}</b>: دي سرعة الحركة من آخر scan. ${Math.abs(velocityPerMinute) >= 1 ? 'الحركة سريعة جدًا.' : 'الحركة اللحظية ملحوظة.'}`,
+    );
+  }
+
+  if (signal.volumePace > 0) {
+    explanations.push(
+      `• <b>Volume pace ${signal.volumePace.toFixed(1)}x</b>: التداول في الفترة الأخيرة أسرع بحوالي ${signal.volumePace.toFixed(1)} مرة من المعدل الطبيعي للسهم.`,
+    );
+  }
+
+  explanations.push(
+    `• <b>HOD gap ${signal.hodDistancePct.toFixed(2)}%</b>: السعر أقل من أعلى سعر النهارده بـ${signal.hodDistancePct.toFixed(2)}%. كل ما الرقم يقرب من صفر يبقى أقرب لقمة اليوم.`,
+  );
+
+  explanations.push(
+    `• <b>1m ${signed(signal.velocity1mPct)} · 3m ${signed(signal.velocity3mPct)}</b>: اتجاه السعر خلال آخر دقيقة وآخر 3 دقايق.`,
+  );
+
+  explanations.push(
+    `• <b>RS ${signal.relativeStrengthPct >= 0 ? '+' : ''}${signal.relativeStrengthPct.toFixed(2)} نقطة</b>: السهم أقوى/أضعف من متوسط حركة السوق بالمقدار ده؛ الموجب يعني أقوى من السوق.`,
+  );
+
+  const warnings: string[] = [];
+  if (signal.changePct >= 10) {
+    warnings.push('⚠️ السهم طالع أكتر من 10% في نفس الجلسة؛ خطر مطاردة السعر عالي جدًا.');
+  }
+  if (Math.abs(velocityPerMinute) >= 2) {
+    warnings.push('⚠️ السرعة اللحظية شديدة؛ السعر ممكن يرجع بعنف زي ما طلع.');
+  }
+  if (signal.volumePace >= 5) {
+    warnings.push('⚠️ حجم التداول استثنائي؛ ده قوة اهتمام، لكنه ممكن يكون شراء <b>أو</b> تصريف، فلازم نشوف استجابة السعر.');
+  }
+  if (signal.hodDistancePct >= 2.5 && signal.changePct >= 5) {
+    warnings.push('⚠️ السهم قوي يوميًا لكنه بعيد نسبيًا عن قمة اليوم؛ ممكن تكون حركة ارتداد داخل اليوم مش breakout جديد.');
+  }
+
+  const why = signal.reasons.length
+    ? signal.reasons.slice(0, 5).map((reason) => `• ${escapeHtml(reason)}`)
+    : ['• نشاط سعري/حجمي غير عادي'];
+
+  return [
+    `${stageEmoji(signal.stage)} <b>${escapeHtml(signal.ticker)} — ${stageArabic(signal.stage)}</b>`,
+    `السعر: <b>${signal.close.toFixed(3)} جنيه</b> · اليوم: <b>${signed(signal.changePct)}</b>`,
+    '',
+    '<b>يعني إيه الإشارة دي؟</b>',
+    signal.stage === 'WATCH'
+      ? 'الرادار شايف السهم نشط وقوي بما يكفي إنك تفتحه وتراقبه، لكن مفيش تأكيد دخول لوحده.'
+      : signal.stage === 'TRIGGERING'
+        ? 'الزخم اللحظي بقى أقوى والإشارة بتقرب من setup قابل للتنفيذ، لكن محتاجة تأكيد من الحركة الفعلية.'
+        : 'السهم عمل حركة اختراق لحظية قوية. ده أعلى تنبيه، لكنه برضه مش أمر شراء وخصوصًا لو السعر اندفع بسرعة.',
+    '',
+    '<b>شرح الأرقام ببساطة:</b>',
+    ...explanations,
+    '',
+    '<b>ليه الرادار اختاره؟</b>',
+    ...why,
+    ...(warnings.length ? ['', '<b>خد بالك:</b>', ...warnings] : []),
+    '',
+    '<b>أعمل إيه دلوقتي كمبتدئ؟</b>',
+    ...beginnerPlan(signal),
+    '',
+    `📊 <b>حالة السوق:</b> ${marketArabic(signal.marketRegime)} · breadth ${(signal.marketBreadthRatio * 100).toFixed(0)}%`,
+    '',
+    'التنبيه هدفه يلفت نظرك لفرصة محتملة؛ القرار يتاخد من السعر + التنفيذات + مستوى إلغاء الفكرة، مش من الـScore لوحده.',
+  ].join('\n');
+}
+
 async function telegramApi(
   env: RadarEnv,
   method: string,
@@ -209,22 +337,11 @@ export function telegramHelpText(): string {
 export async function sendTelegramAlerts(env: RadarEnv, signals: LiveSignal[]): Promise<void> {
   if (!env.TELEGRAM_BOT_TOKEN?.trim() || !env.TELEGRAM_CHAT_ID?.trim() || !signals.length) return;
 
-  const body = signals
-    .slice(0, 5)
-    .map((signal) => {
-      const reasons = signal.reasons.length ? signal.reasons.join(' · ') : 'live momentum setup';
-      return [
-        `${stageEmoji(signal.stage)} <b>${escapeHtml(signal.ticker)} — ${signal.stage}</b>  score ${signal.score.toFixed(1)}`,
-        `Price <b>${signal.close.toFixed(3)}</b> · Day ${signal.changePct >= 0 ? '+' : ''}${signal.changePct.toFixed(2)}%`,
-        `${signal.intervalSeconds}s Δ ${signal.priceDeltaPct >= 0 ? '+' : ''}${signal.priceDeltaPct.toFixed(2)}% · Vol ${signal.volumeDelta.toLocaleString('en-US')} · EGP ${money(signal.intervalTurnover)}`,
-        `Pace ${signal.volumePace.toFixed(1)}x · HOD gap ${signal.hodDistancePct.toFixed(2)}%`,
-        `1m ${signal.velocity1mPct >= 0 ? '+' : ''}${signal.velocity1mPct.toFixed(2)}% · 3m ${signal.velocity3mPct >= 0 ? '+' : ''}${signal.velocity3mPct.toFixed(2)}% · RS ${signal.relativeStrengthPct >= 0 ? '+' : ''}${signal.relativeStrengthPct.toFixed(2)}pp`,
-        `Market ${signal.marketRegime} · breadth ${(signal.marketBreadthRatio * 100).toFixed(0)}%`,
-        `<i>${escapeHtml(reasons)}</i>`,
-        'راقبه على الـDepth والـTrades — دي إشارة متابعة مش أمر شراء.',
-      ].join('\n');
-    })
-    .join('\n\n');
+  const chatId = env.TELEGRAM_CHAT_ID.trim();
 
-  await sendTelegramMessage(env, env.TELEGRAM_CHAT_ID.trim(), body);
+  // Send each signal separately so the beginner explanation remains readable
+  // and we stay comfortably below Telegram's per-message size limit.
+  for (const signal of signals.slice(0, 5)) {
+    await sendTelegramMessage(env, chatId, formatBeginnerAlert(signal));
+  }
 }
