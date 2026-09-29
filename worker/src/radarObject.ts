@@ -176,6 +176,53 @@ function marketContext(rows: ScannerRow[]): MarketContext {
   };
 }
 
+function currentLiquidLeaders(
+  rows: ScannerRow[],
+  market: MarketContext,
+  cfg: RadarConfig,
+) {
+  return rows
+    .filter((row) =>
+      row.close !== null
+      && row.volume !== null
+      && row.turnover !== null
+      && row.high !== null
+      && row.turnover >= cfg.minDailyTurnover
+      && row.volume >= cfg.minVolumeShares
+    )
+    .map((row) => {
+      const close = row.close!;
+      const high = row.high!;
+      const changePct = row.changePct ?? 0;
+      const rvol10 = row.rvol10 ?? 0;
+      const closeLocation = row.closeLocation ?? 0.5;
+      const relativeStrengthPct = changePct - market.medianChangePct;
+      const hodDistancePct = high > 0 ? ((high - close) / high) * 100 : 100;
+      const rank =
+        Math.max(0, changePct) * 2.2
+        + Math.min(Math.max(rvol10, 0), 5) * 2.5
+        + closeLocation * 4
+        + Math.max(0, relativeStrengthPct) * 1.4
+        + Math.max(0, Math.log10(Math.max(row.turnover!, 1)) - 6) * 2;
+
+      return {
+        ticker: row.ticker,
+        name: row.name,
+        close,
+        changePct,
+        turnover: row.turnover!,
+        rvol10,
+        closeLocation,
+        hodDistancePct,
+        relativeStrengthPct,
+        rank,
+      };
+    })
+    .sort((a, b) => b.rank - a.rank)
+    .slice(0, 7)
+    .map(({ rank: _rank, ...leader }) => leader);
+}
+
 function trimHistory(points: HistoryPoint[], now: number, historyMinutes: number): HistoryPoint[] {
   const cutoff = now - historyMinutes * 60_000;
   return points.filter((point) => point.at >= cutoff).slice(-60);
@@ -397,6 +444,7 @@ export class RadarCoordinator {
 
     const { rows, totalCount } = await fetchEgyptScanner();
     const market = marketContext(rows);
+    const leaders = currentLiquidLeaders(rows, market, cfg);
     const rowsByTicker = new Map(rows.map((row) => [row.ticker, row]));
 
     const pendingEvaluation = evaluatePending(state.pendingEvaluations || [], rowsByTicker, now);
@@ -557,6 +605,7 @@ export class RadarCoordinator {
       supabaseError,
       nextPollSeconds: cfg.pollSeconds,
       signals: latestSignals,
+      leaders,
     };
   }
 
