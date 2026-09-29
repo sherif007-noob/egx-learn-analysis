@@ -1,13 +1,21 @@
 import { fetchEgyptScanner } from './scanner';
 import { buildSignal, toSnapshot } from './signal';
-import { persistRadarBatch } from './supabase';
+import {
+  persistAlertEvents,
+  persistAlertOutcomes,
+  persistRadarBatch,
+  supabaseConfigured,
+  type AlertEventRecord,
+} from './supabase';
 import { sendTelegramAlerts } from './telegram';
 import type {
+  AlertOutcome,
   AlertState,
   DeepMetrics,
   HistoryPoint,
   LiveSignal,
   MarketContext,
+  PendingAlertEvaluation,
   RadarConfig,
   RadarEnv,
   RadarState,
@@ -15,7 +23,9 @@ import type {
   SignalStage,
 } from './types';
 
-const STATE_KEY = 'radar-state-v2';
+const STATE_KEY = 'radar-state-v3';
+const OUTCOME_HORIZONS = [5, 10, 20, 30] as const;
+
 const STAGE_RANK: Record<SignalStage, number> = {
   WATCH: 1,
   TRIGGERING: 2,
@@ -77,6 +87,26 @@ function cairoParts(epochMs: number, timeZone: string) {
   };
 }
 
+function hhmmToMinutes(value: string): number {
+  const [hourRaw, minuteRaw] = value.split(':');
+  const hour = Number(hourRaw);
+  const minute = Number(minuteRaw);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return 0;
+  return hour * 60 + minute;
+}
+
+function minutesUntilClose(hhmm: string, sessionEnd: string): number {
+  return Math.max(0, hhmmToMinutes(sessionEnd) - hhmmToMinutes(hhmm));
+}
+
+function timeBucket(hhmm: string): string {
+  const minutes = hhmmToMinutes(hhmm);
+  if (minutes < 10 * 60 + 30) return 'OPEN_10_00_10_30';
+  if (minutes < 12 * 60) return 'MORNING_10_30_12_00';
+  if (minutes < 13 * 60 + 30) return 'MIDDAY_12_00_13_30';
+  return 'CLOSE_13_30_14_30';
+}
+
 function isTradingSession(epochMs: number, cfg: RadarConfig): boolean {
   const { weekday, hhmm } = cairoParts(epochMs, cfg.timeZone);
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu'].includes(weekday)
@@ -103,6 +133,7 @@ function emptyState(sessionDate = ''): RadarState {
     previous: {},
     history: {},
     alerts: {},
+    pendingEvaluations: [],
     latestSignals: [],
     market: emptyMarket(),
     lastUniverseCount: 0,
@@ -218,6 +249,95 @@ function shouldAlert(
   return now - existing.lastAt >= cooldownMs && signal.score >= existing.lastScore + 4;
 }
 
+function createPendingEvaluation(
+  eventId: string,
+  signal: LiveSignal,
+  now: number,
+  availableMinutes: number,
+): PendingAlertEvaluation | null {
+  const remainingHorizons = OUTCOME_HORIZONS.filter((minutes) => minutes <= availableMinutes);
+  if (!remainingHorizons.length) return null;
+
+  return {
+    eventId,
+    ticker: signal.ticker,
+    createdAt: now,
+    entryPrice: signal.close,
+    stage: signal.stage,
+    score: signal.score,
+    maxPrice: signal.close,
+    minPrice: signal.close,
+    remainingHorizons: [...remainingHorizons],
+  };
+}
+
+function evaluatePending(
+  pending: PendingAlertEvaluation[],
+  rowsByTicker: Map<string, ScannerRow>,
+  now: number,
+) {
+  const updatedWithExtrema: PendingAlertEvaluation[] = [];
+  const afterCompletion: PendingAlertEvaluation[] = [];
+  const outcomes: AlertOutcome[] = [];
+
+  for (const item of pending) {
+    const row = rowsByTicker.get(item.ticker);
+    const currentPrice = row?.close;
+
+    if (currentPrice === null || currentPrice === undefined || !Number.isFinite(currentPrice)) {
+      updatedWithExtrema.push(item);
+      afterCompletion.push(item);
+      continue;
+    }
+
+    const maxPrice = Math.max(item.maxPrice, currentPrice);
+    const minPrice = Math.min(item.minPrice, currentPrice);
+    const elapsedMinutes = (now - item.createdAt) / 60_000;
+
+    const due = item.remainingHorizons.filter((horizon) => elapsedMinutes >= horizon);
+    const remaining = item.remainingHorizons.filter((horizon) => elapsedMinutes < horizon);
+
+    const withExtrema: PendingAlertEvaluation = {
+      ...item,
+      maxPrice,
+      minPrice,
+    };
+    updatedWithExtrema.push(withExtrema);
+
+    for (const horizonMinutes of due) {
+      const forwardReturnPct = pctDelta(currentPrice, item.entryPrice);
+      const mfePct = pctDelta(maxPrice, item.entryPrice);
+      const maePct = pctDelta(minPrice, item.entryPrice);
+
+      outcomes.push({
+        eventId: item.eventId,
+        horizonMinutes,
+        evaluatedAt: new Date(now).toISOString(),
+        price: currentPrice,
+        forwardReturnPct,
+        maxPrice,
+        minPrice,
+        mfePct,
+        maePct,
+        hit05Pct: mfePct >= 0.5,
+        hit1Pct: mfePct >= 1,
+        hit2Pct: mfePct >= 2,
+        drawdown05Pct: maePct <= -0.5,
+        drawdown1Pct: maePct <= -1,
+      });
+    }
+
+    if (remaining.length) {
+      afterCompletion.push({
+        ...withExtrema,
+        remainingHorizons: remaining,
+      });
+    }
+  }
+
+  return { updatedWithExtrema, afterCompletion, outcomes };
+}
+
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data, null, 2), {
     status,
@@ -277,6 +397,9 @@ export class RadarCoordinator {
 
     const { rows, totalCount } = await fetchEgyptScanner();
     const market = marketContext(rows);
+    const rowsByTicker = new Map(rows.map((row) => [row.ticker, row]));
+
+    const pendingEvaluation = evaluatePending(state.pendingEvaluations || [], rowsByTicker, now);
 
     const intervalSeconds = state.lastRunAt > 0
       ? clamp((now - state.lastRunAt) / 1000, 5, 90)
@@ -330,19 +453,19 @@ export class RadarCoordinator {
       };
     }
 
-    const nextState: RadarState = {
-      updatedAt: new Date(now).toISOString(),
+    const availableMinutes = minutesUntilClose(clock.hhmm, cfg.sessionEnd);
+    const bucket = timeBucket(clock.hhmm);
+    const alertEvents: AlertEventRecord[] = alertsToSend.map((signal) => ({
+      eventId: crypto.randomUUID(),
+      observedAt: new Date(now).toISOString(),
       sessionDate: clock.date,
-      lastRunAt: now,
-      previous: nextPrevious,
-      history: nextHistory,
-      alerts: nextAlerts,
-      latestSignals,
-      market,
-      lastUniverseCount: totalCount,
-    };
+      timeBucket: bucket,
+      signal,
+    }));
 
-    await this.writeState(nextState);
+    const candidateNewPending = alertEvents
+      .map((event) => createPendingEvaluation(event.eventId, event.signal, now, availableMinutes))
+      .filter((item): item is PendingAlertEvaluation => item !== null);
 
     let telegramError: string | null = null;
     if (alertsToSend.length) {
@@ -355,9 +478,12 @@ export class RadarCoordinator {
     }
 
     let supabaseError: string | null = null;
+    let alertEventsPersisted = !supabaseConfigured(this.env);
+    let outcomesPersisted = !supabaseConfigured(this.env);
+
     try {
       await persistRadarBatch(this.env, {
-        observedAt: nextState.updatedAt,
+        observedAt: new Date(now).toISOString(),
         sessionDate: clock.date,
         universeCount: totalCount,
         intervalSeconds,
@@ -367,9 +493,49 @@ export class RadarCoordinator {
       });
     } catch (error) {
       supabaseError = error instanceof Error ? error.message : String(error);
-      console.error(JSON.stringify({ type: 'supabase-error', supabaseError }));
+      console.error(JSON.stringify({ type: 'supabase-radar-error', supabaseError }));
     }
 
+    if (supabaseConfigured(this.env) && alertEvents.length) {
+      try {
+        await persistAlertEvents(this.env, alertEvents);
+        alertEventsPersisted = true;
+      } catch (error) {
+        supabaseError = error instanceof Error ? error.message : String(error);
+        console.error(JSON.stringify({ type: 'supabase-alert-event-error', supabaseError }));
+      }
+    }
+
+    if (supabaseConfigured(this.env) && pendingEvaluation.outcomes.length) {
+      try {
+        await persistAlertOutcomes(this.env, pendingEvaluation.outcomes);
+        outcomesPersisted = true;
+      } catch (error) {
+        supabaseError = error instanceof Error ? error.message : String(error);
+        console.error(JSON.stringify({ type: 'supabase-outcome-error', supabaseError }));
+      }
+    }
+
+    const retainedExistingPending = outcomesPersisted
+      ? pendingEvaluation.afterCompletion
+      : pendingEvaluation.updatedWithExtrema;
+
+    const newPending = alertEventsPersisted ? candidateNewPending : [];
+
+    const nextState: RadarState = {
+      updatedAt: new Date(now).toISOString(),
+      sessionDate: clock.date,
+      lastRunAt: now,
+      previous: nextPrevious,
+      history: nextHistory,
+      alerts: nextAlerts,
+      pendingEvaluations: [...retainedExistingPending, ...newPending],
+      latestSignals,
+      market,
+      lastUniverseCount: totalCount,
+    };
+
+    await this.writeState(nextState);
     await this.ensureNextAlarm(now, cfg);
 
     return {
@@ -380,8 +546,13 @@ export class RadarCoordinator {
       market,
       signalCount: latestSignals.length,
       alertsSelected: alertsToSend.length,
+      calibration: {
+        pending: nextState.pendingEvaluations.length,
+        outcomesEvaluated: pendingEvaluation.outcomes.length,
+        eventTrackingEligible: candidateNewPending.length,
+      },
       telegramConfigured: Boolean(this.env.TELEGRAM_BOT_TOKEN && this.env.TELEGRAM_CHAT_ID),
-      supabaseConfigured: Boolean(this.env.SUPABASE_URL && this.env.SUPABASE_SERVICE_ROLE_KEY),
+      supabaseConfigured: supabaseConfigured(this.env),
       telegramError,
       supabaseError,
       nextPollSeconds: cfg.pollSeconds,
@@ -403,12 +574,13 @@ export class RadarCoordinator {
         tradingSession: isTradingSession(Date.now(), cfg),
         pollSeconds: cfg.pollSeconds,
         telegramConfigured: Boolean(this.env.TELEGRAM_BOT_TOKEN && this.env.TELEGRAM_CHAT_ID),
-        supabaseConfigured: Boolean(this.env.SUPABASE_URL && this.env.SUPABASE_SERVICE_ROLE_KEY),
+        supabaseConfigured: supabaseConfigured(this.env),
         state: {
           updatedAt: state.updatedAt,
           sessionDate: state.sessionDate,
           lastUniverseCount: state.lastUniverseCount,
           signalCount: state.latestSignals.length,
+          pendingEvaluations: state.pendingEvaluations?.length || 0,
           market: state.market,
         },
         nextAlarm: await this.ctx.storage.getAlarm(),
