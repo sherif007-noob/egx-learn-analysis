@@ -1,4 +1,4 @@
-import { fetchCalibrationSummary, supabaseConfigured } from './supabase';
+import { fetchCalibrationSummary, fetchSessionRecap, supabaseConfigured } from './supabase';
 import {
   fetchRapidDepth,
   fetchRapidHealth,
@@ -16,13 +16,20 @@ import {
   configureTelegramBot,
   deriveTelegramWebhookSecret,
   formatFeedTestResult,
+  formatInspectResult,
+  formatLeadersResult,
   formatLiveScanResult,
   formatManualScanResult,
   formatRadarStatus,
+  formatRecapResult,
   formatRegimeScanResult,
+  formatSessionResult,
+  formatWatchlistResult,
+  formatWhyResult,
   sendTelegramMessage,
   telegramBotStatus,
   telegramHelpText,
+  telegramTermsText,
 } from './telegram';
 import type { RadarEnv, RadarState } from './types';
 
@@ -85,6 +92,13 @@ function requestedSymbol(url: URL): string | null {
   return value || null;
 }
 
+function escapeHtmlForTelegram(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 async function telegramWebhookAuthorized(request: Request, env: RadarEnv): Promise<boolean> {
   if (!env.ADMIN_TOKEN) return false;
   const expected = await deriveTelegramWebhookSecret(env.ADMIN_TOKEN);
@@ -102,6 +116,137 @@ async function handleTelegramCommand(update: any, env: RadarEnv): Promise<void> 
 
   const rawCommand = text.split(/\s+/)[0]?.toLowerCase() || '';
   const command = rawCommand.split('@')[0];
+
+  if (command === '/inspect' || command === '/why') {
+    const parts = text.split(/\s+/).filter(Boolean);
+    const symbol = String(parts[1] || '').trim().toUpperCase();
+
+    if (!symbol) {
+      await sendTelegramMessage(
+        env,
+        chatId,
+        `استخدم الأمر بالشكل ده:\n<code>${command} BIOC</code>`,
+      );
+      return;
+    }
+
+    try {
+      const [marketData, stateResponse] = await Promise.all([
+        fetchEgyptScanner(),
+        coordinator(env).fetch('https://radar.internal/latest'),
+      ]);
+      const state = await stateResponse.json() as RadarState;
+      const row = marketData.rows.find((item) => item.ticker === symbol) || null;
+      const signal = (state.latestSignals || []).find((item) => item.ticker === symbol) || null;
+      const formatted = command === '/inspect'
+        ? formatInspectResult({ symbol, row, signal, market: state.market })
+        : formatWhyResult({ symbol, row, signal, market: state.market });
+      await sendTelegramMessage(env, chatId, formatted);
+    } catch (error) {
+      await sendTelegramMessage(
+        env,
+        chatId,
+        `❌ ${escapeHtmlForTelegram(error instanceof Error ? error.message : String(error))}`,
+      );
+    }
+    return;
+  }
+
+  if (command === '/leaders' || command === '/session') {
+    try {
+      const response = await coordinator(env).fetch(
+        'https://radar.internal/tick?force=1&notify=0',
+        { method: 'POST' },
+      );
+      const result = await response.json();
+      await sendTelegramMessage(
+        env,
+        chatId,
+        command === '/leaders' ? formatLeadersResult(result) : formatSessionResult(result),
+      );
+    } catch (error) {
+      await sendTelegramMessage(
+        env,
+        chatId,
+        `❌ ${escapeHtmlForTelegram(error instanceof Error ? error.message : String(error))}`,
+      );
+    }
+    return;
+  }
+
+  if (command === '/watch' || command === '/unwatch') {
+    const parts = text.split(/\s+/).filter(Boolean);
+    const symbol = String(parts[1] || '').trim().toUpperCase();
+
+    if (!symbol) {
+      await sendTelegramMessage(
+        env,
+        chatId,
+        `استخدم <code>${command} BIOC</code>`,
+      );
+      return;
+    }
+
+    const method = command === '/watch' ? 'POST' : 'DELETE';
+    const response = await coordinator(env).fetch(
+      `https://radar.internal/watchlist?symbol=${encodeURIComponent(symbol)}`,
+      { method },
+    );
+    const result = await response.json() as any;
+
+    if (!response.ok) {
+      await sendTelegramMessage(env, chatId, `❌ ${escapeHtmlForTelegram(String(result?.error || 'watchlist update failed'))}`);
+      return;
+    }
+
+    await sendTelegramMessage(
+      env,
+      chatId,
+      command === '/watch'
+        ? `⭐ <b>${symbol}</b> اتضاف للـwatchlist الشخصية.\nاستخدم /watchlist أو /inspect ${symbol}.`
+        : `🗑 <b>${symbol}</b> اتشال من الـwatchlist.`,
+    );
+    return;
+  }
+
+  if (command === '/watchlist') {
+    const [listResponse, stateResponse] = await Promise.all([
+      coordinator(env).fetch('https://radar.internal/watchlist'),
+      coordinator(env).fetch('https://radar.internal/latest'),
+    ]);
+    const list = await listResponse.json() as any;
+    const state = await stateResponse.json() as RadarState;
+    await sendTelegramMessage(env, chatId, formatWatchlistResult(list.watchlist || [], state));
+    return;
+  }
+
+  if (command === '/recap') {
+    if (!supabaseConfigured(env)) {
+      await sendTelegramMessage(env, chatId, '❌ Supabase recap storage مش configured.');
+      return;
+    }
+
+    const stateResponse = await coordinator(env).fetch('https://radar.internal/latest');
+    const state = await stateResponse.json() as RadarState;
+    const sessionDate = state.sessionDate || new Date().toISOString().slice(0, 10);
+
+    try {
+      const recap = await fetchSessionRecap(env, sessionDate);
+      await sendTelegramMessage(env, chatId, formatRecapResult(sessionDate, recap));
+    } catch (error) {
+      await sendTelegramMessage(
+        env,
+        chatId,
+        `❌ Recap failed: ${escapeHtmlForTelegram(error instanceof Error ? error.message : String(error))}`,
+      );
+    }
+    return;
+  }
+
+  if (command === '/terms') {
+    await sendTelegramMessage(env, chatId, telegramTermsText());
+    return;
+  }
 
   if (command === '/feedtest') {
     const parts = text.split(/\s+/).filter(Boolean);
