@@ -9,6 +9,7 @@ const TICKER_METADATA: Record<string, { persistedSymbol?: string; isin?: string 
   KORA: { persistedSymbol: 'KORA', isin: 'EGS07911C018' },
   RKAZ: { persistedSymbol: 'RKAZ', isin: 'EGS521T1C016' },
   RUBX: { persistedSymbol: 'RUBX', isin: 'EGS3A221C018' },
+  AFMC: { persistedSymbol: 'AFMC' },
 };
 
 function normalizeTicker(value: string): string {
@@ -20,7 +21,7 @@ function unique<T>(items: T[]): T[] {
 }
 
 function requestedTickers(): string[] {
-  const raw = process.env.EGX_INTRADAY_TICKERS || 'CRST,NAPR,KORA,RKAZ,RUBX,TAQA,MAAL,OFH,SWDY,GIHD,FWRY,OIH,ARCC,MBSC,MCQE,SCEM,SVCE';
+  const raw = process.env.EGX_INTRADAY_TICKERS || 'CRST,NAPR,KORA,RKAZ,RUBX,TAQA,MAAL,AFMC,OFH,SWDY,GIHD,FWRY,OIH,ARCC,MBSC,MCQE,SCEM,SVCE';
   return unique(raw.split(',').map(normalizeTicker).filter(Boolean));
 }
 

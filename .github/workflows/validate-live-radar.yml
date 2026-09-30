@@ -1,0 +1,43 @@
+name: Validate Live Radar
+
+on:
+  push:
+    branches:
+      - feature/cloudflare-live-radar
+      - feature/regime-shift-detector
+    paths:
+      - 'worker/**'
+      - 'wrangler.jsonc'
+      - 'package.json'
+      - 'scripts/validateRegimeDetector.ts'
+      - '.github/workflows/validate-live-radar.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Type-check live radar
+        run: >
+          npx tsc --noEmit
+          --target ES2022
+          --module ESNext
+          --moduleResolution Bundler
+          --lib ES2022,DOM
+          worker/src/*.ts
+
+      - name: Regime regression check
+        run: npm run radar:regime-check
+
+      - name: Cloudflare dry build
+        run: npx wrangler deploy --dry-run --outdir dist/live-radar

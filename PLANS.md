@@ -7,7 +7,7 @@
 
 - **Maximum one new active trade.**
 - Primary watchlist: **TAQA + KORA**.
-- First backup: **CRST**. High-volatility backup: **RUBX**. Event-risk backup: **MAAL**. Last backup: **NAPR**.
+- First backup: **CRST**. Live momentum watch: **AFMC**. High-volatility backup: **RUBX**. Event-risk backup: **MAAL**. Last backup: **NAPR**.
 - **RKAZ = no-trade / observation only** unless live liquidity changes dramatically.
 - No averaging down in losing positions.
 - No market orders in fast/thin names.
@@ -38,8 +38,9 @@ Protected cash floor: ~**EGP 9,900 (15%)**
 ## Backups
 1. **CRST** — cleaner structure but lower recent relative volume
 2. **RUBX** — liquid but much more whipsaw-prone
-3. **MAAL** — high activity, but event/governance risk must be checked before the open
-4. **NAPR** — only on a clean reclaim setup
+3. **AFMC** — live momentum-rebound watch; prefer 144.00–144.50 hold/reclaim or acceptance through 145.50 rather than chasing thin offers
+4. **MAAL** — high activity, but event/governance risk must be checked before the open
+5. **NAPR** — only on a clean reclaim setup
 
 Do **not** choose the stock before the market gives the setup.
 
@@ -373,7 +374,7 @@ One-share tracking position. No action planned.
 
 # 11. Live reading checklist
 
-For **TAQA / KORA / CRST / RUBX / MAAL / NAPR / ACTF**, inspect in this order:
+For **TAQA / KORA / CRST / AFMC / RUBX / MAAL / NAPR / ACTF**, inspect in this order:
 
 1. **Where is price?** At a mapped support/resistance level or in the middle of nowhere?
 2. **Spread:** tight enough to enter/exit?
@@ -434,7 +435,7 @@ Do nothing.
 
 # 13. Data notes
 
-- CRST, NAPR, KORA, RKAZ, RUBX, TAQA, MAAL and the broader scanner shortlist now have standalone TradingView **1m** data in this repository.
+- CRST, NAPR, KORA, RKAZ, RUBX, TAQA, MAAL, AFMC and the broader scanner shortlist are part of the standalone TradingView **1m** research set in this repository.
 - KORA's previous incomplete 5m issue is no longer a blocker for analysis because the new standalone 1m fetch includes the full Sep 24 session.
 - RKAZ official-close representations differ between some feeds; use live session data rather than relying on the disputed prior close for execution.
 
@@ -444,3 +445,89 @@ Do nothing.
 
 Previous working plan:
 - `plans/archive/2026-09-27.md`
+
+
+---
+
+# Live EGX Radar — Cloudflare implementation
+
+Status: **Phase 1 implemented on `feature/cloudflare-live-radar`**
+
+Implemented:
+- full TradingView Egypt universe scan,
+- Cloudflare Worker entrypoint,
+- one persistent Durable Object coordinator,
+- 20-second alarm-driven live polling during EGX session,
+- Cairo timezone/session gating,
+- live interval price/volume/turnover deltas,
+- volume pace versus 10-day average minute,
+- HOD proximity + new-HOD detection,
+- WATCH / TRIGGERING / BREAKOUT stages,
+- Telegram alert output,
+- alert cooldown/deduplication,
+- manual `/api/scan`, `/api/latest`, `/api/reset`, and `/health` endpoints,
+- Wrangler deployment config + Durable Object migration,
+- CI type-check and Wrangler dry-build.
+
+Deployment and tuning guide: `docs/LIVE_EGX_RADAR.md`.
+
+Next:
+1. deploy the Worker and add Telegram secrets,
+2. run forced scans to verify production access to TradingView,
+3. observe one full EGX session and collect false positives,
+4. add relative strength versus EGX70/EGX100,
+5. add 1m/3m/VWAP/deep-shortlist logic,
+6. later add Depth/Trades only through a reliable data feed.
+
+
+## Live Radar Phase 2 — completed
+
+Added on `feature/cloudflare-live-radar`:
+
+- rolling 5-minute per-symbol snapshot history,
+- 1m and 3m velocity,
+- relative strength vs median EGX stock,
+- live market breadth and regime classification,
+- positive-interval persistence,
+- micro higher-low detection,
+- 2-minute compression,
+- risk-off relative-strength bonus / weak-tape penalty,
+- Supabase persistence for runs, signal history, and latest ticker state.
+
+Supabase tables created and migration committed:
+- `live_radar_runs`
+- `live_radar_signals`
+- `live_radar_latest`
+
+Next after production data is collected:
+- forward-return / MFE / MAE calibration,
+- tune alert thresholds by time of day,
+- add richer opening-range and pullback/reclaim states,
+- order-flow Depth/Trades integration only when a reliable feed is available.
+
+
+## Live Radar Phase 3 — completed
+
+Adaptive-calibration data collection is now implemented.
+
+Each emitted alert can be followed for 5/10/20/30 minutes within the same trading session. The radar stores:
+
+- alert-time feature snapshot,
+- forward return,
+- MFE / MAE,
+- +0.5% / +1% / +2% hit flags,
+- -0.5% / -1% adverse-excursion flags,
+- stage / score bucket / time bucket / market regime.
+
+Supabase additions:
+- `live_radar_alert_events`
+- `live_radar_alert_outcomes`
+- `live_radar_calibration_summary`
+
+Worker endpoint:
+- `GET /api/calibration`
+
+Calibration policy:
+- collect data first,
+- do not auto-change thresholds on tiny samples,
+- tune score/time/regime thresholds only after statistically useful observations accumulate.
