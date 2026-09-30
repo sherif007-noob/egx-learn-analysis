@@ -302,6 +302,119 @@ export async function fetchRapidDepth(
   };
 }
 
+
+function compositeSection(root: any, keys: string[]): any {
+  for (const key of keys) {
+    const value = root?.[key];
+    if (value && typeof value === 'object') return value;
+  }
+  return null;
+}
+
+export async function fetchRapidStock(
+  env: RadarEnv,
+  symbol: string,
+  levels: 5 | 40 = 5,
+): Promise<{ quote: RapidEgxQuote; depth: RapidEgxDepth; raw: any }> {
+  const ticker = normalizeSymbol(symbol);
+  const endpoint = `/api/stock/${encodeURIComponent(ticker)}`;
+  const { payload, meta } = await rapidGet<any>(env, endpoint);
+  const root = payload?.data && typeof payload.data === 'object' ? payload.data : payload;
+
+  const quoteSource = compositeSection(root, ['quote', 'price', 'stock']) || root || {};
+  const depthSource = levels === 40
+    ? compositeSection(root, ['depth_40', 'depth40', 'order_book_40', 'orderBook40', 'full_depth', 'fullDepth'])
+      || compositeSection(root?.depth, ['depth_40', 'depth40', 'full', 'book'])
+      || root?.depth
+      || root
+    : compositeSection(root, ['depth_5', 'depth5', 'order_book_5', 'orderBook5', 'top5', 'top_5'])
+      || compositeSection(root?.depth, ['depth_5', 'depth5', 'top5', 'top_5', 'book'])
+      || root?.depth
+      || root;
+
+  const quoteUpdatedAt = stringOrNull(
+    quoteSource?.updated_at
+    ?? quoteSource?.updatedAt
+    ?? root?.updated_at
+    ?? root?.updatedAt,
+  );
+
+  const depthUpdatedAt = stringOrNull(
+    depthSource?.updated_at
+    ?? depthSource?.updatedAt
+    ?? root?.updated_at
+    ?? root?.updatedAt,
+  );
+
+  const quote: RapidEgxQuote = {
+    ...meta,
+    symbol: String(quoteSource?.symbol || root?.symbol || ticker).toUpperCase(),
+    last: numberOrNull(quoteSource?.last ?? quoteSource?.price ?? root?.last),
+    open: numberOrNull(quoteSource?.open ?? root?.open),
+    high: numberOrNull(quoteSource?.high ?? root?.high),
+    low: numberOrNull(quoteSource?.low ?? root?.low),
+    prevClose: numberOrNull(
+      quoteSource?.prev_close
+      ?? quoteSource?.prevClose
+      ?? quoteSource?.previous_close
+      ?? root?.prev_close,
+    ),
+    bid: numberOrNull(
+      quoteSource?.bid
+      ?? quoteSource?.best_bid
+      ?? root?.bid
+      ?? root?.best_bid,
+    ),
+    ask: numberOrNull(
+      quoteSource?.ask
+      ?? quoteSource?.best_ask
+      ?? root?.ask
+      ?? root?.best_ask,
+    ),
+    bidVol: numberOrNull(
+      quoteSource?.bid_vol
+      ?? quoteSource?.bidVol
+      ?? quoteSource?.bid_volume
+      ?? root?.bid_vol,
+    ),
+    askVol: numberOrNull(
+      quoteSource?.ask_vol
+      ?? quoteSource?.askVol
+      ?? quoteSource?.ask_volume
+      ?? root?.ask_vol,
+    ),
+    volume: numberOrNull(quoteSource?.volume ?? root?.volume),
+    change: numberOrNull(quoteSource?.change ?? root?.change),
+    changePct: numberOrNull(
+      quoteSource?.change_pct
+      ?? quoteSource?.changePct
+      ?? root?.change_pct,
+    ),
+    updatedAt: quoteUpdatedAt,
+    dataAgeMs: dataAgeMs(quoteUpdatedAt),
+  };
+
+  const depth: RapidEgxDepth = {
+    ...meta,
+    symbol: String(depthSource?.symbol || root?.symbol || ticker).toUpperCase(),
+    requestedLevels: levels === 40 ? 40 : 5,
+    bids: normalizeDepthLevels(
+      depthSource?.bids
+      ?? depthSource?.bid
+      ?? root?.bids,
+    ),
+    asks: normalizeDepthLevels(
+      depthSource?.asks
+      ?? depthSource?.ask
+      ?? root?.asks,
+    ),
+    updatedAt: depthUpdatedAt,
+    dataAgeMs: dataAgeMs(depthUpdatedAt),
+  };
+
+  return { quote, depth, raw: payload };
+}
+
 export async function fetchRapidSummary(
   env: RadarEnv,
   threshold?: number,
@@ -351,11 +464,10 @@ export async function fetchRapidValidationSample(
   symbol: string,
   levels: 5 | 40 = 5,
 ): Promise<any> {
-  const [quote, depth, summary] = await Promise.all([
-    fetchRapidQuote(env, symbol),
-    fetchRapidDepth(env, symbol, levels),
-    fetchRapidSummary(env),
-  ]);
+  // Use the provider's composite stock endpoint so a validation sample costs
+  // one RapidAPI request instead of bursting quote + depth + summary together.
+  // This matters on low-rate free plans and makes /feedtest a fair latency test.
+  const { quote, depth } = await fetchRapidStock(env, symbol, levels);
 
   const bestBid = depth.bids[0] || null;
   const bestAsk = depth.asks[0] || null;
@@ -370,7 +482,14 @@ export async function fetchRapidValidationSample(
     sampledAt: new Date().toISOString(),
     quote,
     depth,
-    summary,
+    summary: {
+      advancing: null,
+      declining: null,
+      unchanged: null,
+      total: null,
+      threshold: null,
+    },
+    requestCount: 1,
     derived: {
       bestBid,
       bestAsk,
