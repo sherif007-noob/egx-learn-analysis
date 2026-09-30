@@ -132,6 +132,10 @@ function quotaFromHeaders(headers: Headers): RapidApiQuota {
   };
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function timeoutMs(env: RadarEnv): number {
   const parsed = Number(env.RAPIDAPI_TIMEOUT_MS || 5000);
   if (!Number.isFinite(parsed)) return 5000;
@@ -478,10 +482,16 @@ export async function fetchRapidValidationSample(
   symbol: string,
   levels: 5 | 40 = 5,
 ): Promise<any> {
-  // Use the provider's composite stock endpoint so a validation sample costs
-  // one RapidAPI request instead of bursting quote + depth + summary together.
-  // This matters on low-rate free plans and makes /feedtest a fair latency test.
-  const { quote, depth } = await fetchRapidStock(env, symbol, levels);
+  // RapidAPI's current public docs advertise /api/stock/{symbol}, but the
+  // subscribed gateway can return 404 for that composite route. Use the
+  // independently documented quote + depth endpoints instead.
+  //
+  // They are intentionally serialized rather than fired in Promise.all:
+  // the free plan/gateway has already shown burst-rate 429s under concurrent
+  // requests. A short spacing makes /feedtest useful without wasting quota.
+  const quote = await fetchRapidQuote(env, symbol);
+  await sleep(1250);
+  const depth = await fetchRapidDepth(env, symbol, levels);
 
   const bestBid = depth.bids[0] || null;
   const bestAsk = depth.asks[0] || null;
@@ -503,7 +513,9 @@ export async function fetchRapidValidationSample(
       total: null,
       threshold: null,
     },
-    requestCount: 1,
+    requestCount: 2,
+    requestSpacingMs: 1250,
+    compositeEndpointBypassed: true,
     derived: {
       bestBid,
       bestAsk,
