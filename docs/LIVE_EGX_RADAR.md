@@ -282,6 +282,14 @@ GET /api/feed/compare?symbol=BIOC
 
 `/api/feed/compare` compares RapidAPI's current quote against the existing TradingView scanner snapshot and reports the RapidAPI data age from the provider timestamp. This is useful for proving the current 15-minute TradingView-delay problem quantitatively.
 
+### Provider docs/runtime mismatch observed
+
+On 2026-09-30 the RapidAPI product page advertised API v2 and documented `GET /api/stock/{symbol}` as a unified quote + 5-depth + 40-depth endpoint, but the subscribed RapidAPI gateway returned HTTP 404 for `/api/stock/AFMC` with "Endpoint ... does not exist".
+
+The validation path therefore does not depend on the composite endpoint. `/feedtest` uses the independently documented `/api/price/{symbol}` and `/api/depth_5/{symbol}` routes, serialized with a short spacing to avoid the free-tier burst 429 previously observed. Market breadth is omitted from the feed test to conserve quota.
+
+This is intentionally treated as a provider docs/runtime mismatch until live-session behavior proves otherwise.
+
 ### Validation rule before promotion
 
 Do not switch the automatic radar to RapidAPI merely because requests return 200.
