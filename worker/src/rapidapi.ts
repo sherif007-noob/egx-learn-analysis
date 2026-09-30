@@ -202,8 +202,22 @@ async function rapidGet<T = any>(
       const detail = typeof payload === 'string'
         ? payload.slice(0, 400)
         : JSON.stringify(payload).slice(0, 400);
+      const burstLimit = response.headers.get('x-ratelimit-limit');
+      const burstRemaining = response.headers.get('x-ratelimit-remaining');
+      const burstReset = response.headers.get('x-ratelimit-reset');
+      const planLimit = response.headers.get('x-ratelimit-requests-limit');
+      const planRemaining = response.headers.get('x-ratelimit-requests-remaining');
+      const planReset = response.headers.get('x-ratelimit-requests-reset');
+      const freeLimit = response.headers.get('x-rate-limit-rapid-free-plans-hard-limit-limit');
+      const freeRemaining = response.headers.get('x-rate-limit-rapid-free-plans-hard-limit-remaining');
+      const retryAfter = response.headers.get('retry-after');
+
+      const limitContext = response.status === 429
+        ? ` rate-limit={burst:${burstRemaining ?? '?'}/${burstLimit ?? '?'}, burstReset:${burstReset ?? '?'}, plan:${planRemaining ?? '?'}/${planLimit ?? '?'}, planReset:${planReset ?? '?'}, free:${freeRemaining ?? '?'}/${freeLimit ?? '?'}, retryAfter:${retryAfter ?? '?'}}`
+        : '';
+
       throw new RapidApiError(
-        `RapidAPI EGX request failed: ${response.status} ${detail}`,
+        `RapidAPI EGX request failed: ${response.status} ${detail}${limitContext}`,
         response.status,
         endpoint,
       );
